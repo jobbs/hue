@@ -1,0 +1,769 @@
+{% extends 'base.html' %}
+{% block title %}- View {% endblock %}
+{% block content %}
+
+  <script type="text/javascript" src="/static/visjs/vis.js"></script>
+  <link href="/static/visjs/vis-network.min.css" rel="stylesheet" type="text/css" />
+
+  <style type="text/css">
+    #mynetwork {
+      width: 600px;
+      height: 755px;
+      border: 1px solid lightgray;
+    }
+  </style>
+<script>
+function updateDestNode(roomid, carno, nodes) {
+var img = createDestImage(roomid, carno, nodes);
+ nodes.update({'id': '20'+String(roomid), 'label': 'Dest'+roomid, 'image': createDestImage(roomid, carno, nodes)});
+}
+
+function createDestImage(roomid, carno, nodes){
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="80" viewPort="0 0 96 80">' +
+            '<rect x="5" y="5" rx="10" ry="10" width="86" height="70" style="fill:white;stroke:gray;stroke-width:5;" />' ;
+      var svgContent = '';
+      var endSvg = '</svg>';
+      var fullSvg = '';
+      var destId = "20"+String(roomid);
+      var x=0;
+      var y=0;
+      ns = nodes.getIds();
+      for(var i=0; i< ns.length; i++) {
+        var item = nodes.get(ns[i]);
+        if(item.type=='sign' && destId == item.id) {
+            x = item.x;
+            y = item.y;
+        }
+      }
+      svgContent = '<text x="25" y="45" style="font-size:20px;fill:#000000;">'+ carno +'</text>';
+      fullSvg = svg+svgContent+endSvg;
+      return "data:image/svg+xml;charset=utf-8,"+ encodeURIComponent(fullSvg);
+}
+
+function pad(n, width) {
+  n = n + '';
+  var result = n.length >= width ? n : new Array(width - n.length + 1).join('0') + n;
+  return result;
+}
+function convertDirection(str){
+  switch(str){
+    case "직진":
+      return 3;
+    case "좌회전":
+      return 2;
+    case "우회전":
+      return 1;
+    case "END":
+      return 5;
+    default :
+    return 9;
+  }
+}
+
+function rewindDirection(str){
+  switch(str){
+    case "3":
+      return "직진";
+    case "2":
+      return "좌회전";
+    case "1":
+      return "우회전";
+    case "5":
+      return "도착";
+    default :
+    return "에러";
+  }
+}
+function convertArrow(direction){
+
+    switch (direction) {
+      case 2:
+        return '&#11104;';
+      case 3:
+        return '&#11105;';
+      case 1:
+        return '&#11106;';
+      default:
+        return ' ';
+    }
+}
+function createImage(signid, carnoArr, paths) {
+
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="100" viewPort="0 0 120 100">' +
+            '<rect x="5" y="5" rx="10" ry="10" width="110" height="90" style="fill:white;stroke:gray;stroke-width:5;" />' ;
+
+    var svgContent ='';
+    var endSvg = '</svg>';
+    var fullSvg = '';
+    var realSignId; //로라센서에 보내기위한 전광판ID
+    if(signid == 100){
+      realSignId = '02';
+    }else if(signid == 101){
+      realSignId = '03';
+    }else if(signid == 102){
+      realSignId = '04';
+    }
+      var breakpoint = false;
+      if(carnoArr.length > 0){
+       for(var j=0; j<carnoArr.length; j++){
+         for(var k=0; k<paths.length; k++){
+             if(paths[k].id == carnoArr[j].split("_")[0]){
+               for(var l=0; l<paths[k].paths.length; l++){
+                 if(convertDirection(paths[k].paths[l]) < 5){
+                   if(signid < 102){ // 2번째 전광판까지는 정면에서 보기때문에 Rotate 를 사용하지 않는다.
+                     svgContent += '<text x="15" y="'+(j+1)*30+'" style="font-size:20px;fill:#000000;">'+ carnoArr[j].split("_")[1] +'</text>' +
+                                   '<text x="70" y="'+(j+1)*30+'" style="font-size:30px;fill:#000000;">'+ convertArrow(convertDirection(paths[k].paths[l+(signid-100)])) +'</text>';
+                     trnsfSerialData = '<1'+realSignId+'015'+carnoArr[j].split("_")[1]+convertDirection(paths[k].paths[l+(signid-100)])+'1>'; //센서에 보낼 데이터를 생성한다
+                     signalArr.push(trnsfSerialData); //Ajax 로 데이터 송출
+                     if(clickFlag){
+                       saveReservation(carnoArr[j]);
+                     }
+                     break;
+                   }else if(signid == 102){ // 3번째 전광판은 90도 꺾여져있기 때문에 화면에 표출되는 SVG 도 90도 Rotate 하여 표현한다.
+                     if(carnoArr[j].split("_")[1] == " " || carnoArr[j].split("_")[1] == undefined){
+                       break;
+                     }
+                     svgContent += '<text x="15" y="-'+(((j+1)*90)-(120*j))+'" style="font-size:20px;fill:#000000;" transform = "rotate(90)">'+ carnoArr[j].split("_")[1]+'</text>' +
+                                     '<text x="70" y="-'+(((j+1)*90)-(120*j))+'" style="font-size:30px;fill:#000000;" transform = "rotate(90)">'+ convertArrow(convertDirection(paths[k].paths[l+(signid-100)])) +'</text>';
+                     trnsfSerialData = '<1'+realSignId+'015'+carnoArr[j].split("_")[1]+convertDirection(paths[k].paths[l+(signid-100)])+'1>'; //센서에 보낼 데이터를 생성한다
+                     signalArr.push(trnsfSerialData); //Ajax 로 데이터 송출
+                     if(clickFlag){
+                       saveReservation(carnoArr[j]);
+                     }
+                     break;
+                   }
+                 }// 전광판 비교 end
+               }
+             }
+         }
+
+       }// 차량번호 Array Loop end
+     }else{ // 차량번호 Array에 값이 없다면
+       svgContent += '<text x="15" y="-'+(((j+1)*90)-(120*j))+'" style="font-size:20px;fill:#000000;" transform = "rotate(90)"> </text>' +
+                     '<text x="70" y="-'+(((j+1)*90)-(120*j))+'" style="font-size:30px;fill:#000000;" transform = "rotate(90)"> </text>';
+     }
+
+
+   fullSvg = svg+svgContent+endSvg;
+   clickFlag = false;
+   return "data:image/svg+xml;charset=utf-8,"+ encodeURIComponent(fullSvg);
+}
+function checkDupCarno(roomid, carno, order){
+  var rtnFlag = false;
+        $("input[name^=room_]").each(function(){
+          var eachRoomId = $(this).attr("id").split("_")[1];
+          var eachOrder = $(this).attr("id").split("_")[2];
+          var eachCarno = $(this).val();
+          if((roomid != eachRoomId && order == eachOrder) || (roomid == eachRoomId && order != eachOrder)  || (roomid != eachRoomId && order != eachOrder)){
+            if((carno != "" || eachCarno != "") && carno == eachCarno  ){
+              $("#room_"+roomid+"_"+order).val("");
+              rtnFlag = true;
+            }
+          }
+        });
+
+        return rtnFlag;
+}
+/*
+room1 : left(3)
+room2 : up, left(1,3)
+room3 : up, up(1,1)
+room4 : up, right, left, up (1,4,3,1)
+room5 : up, right, left, right (1,4,3,4)
+room6 : up, right, up, up (1,4,1,1)
+room7 : up, right, up, right (1,4,1,4)
+*/
+paths = [];
+{% for path in paths %}
+p = []
+p.push('{{path.path1}}');
+p.push('{{path.path2}}');
+p.push('{{path.path3}}');
+p.push('{{path.path4}}');
+p.push('{{path.path5}}');
+p.push('{{path.path6}}');
+p.push('{{path.path7}}');
+p.push('{{path.path8}}');
+p.push('{{path.path9}}');
+pinfo={'id': '{{path.room.id}}', 'room_name': '{{path.room.room_name}}', 'paths': p }
+paths.push(pinfo);
+{% endfor %}
+rooms = []
+
+{% for room in rooms %}
+rooms.push({'car_no': '{{room.car_no}}', 'limittime': '{{room.limittime}}', 'udate': '{{room.updated_date}}', 'room_id': '{{room.id}}', 'room_name': '{{room.room_name}}' });
+
+{% endfor %}
+reserves = []
+{% for reserve in reserves %}
+
+reserves.push({'roomid':{{reserve.roomid}}, 'carno':{{reserve.carno}}, 'order':{{reserve.reserveOrder}}, 'reserveDate':convertCDNum('{{reserve.reserveDate.isoformat}}')});
+{% endfor %}
+svgs = []
+{% for svg in svgs %}
+svgs.push({'signid':{{svg.signid}}, 'svgdata':'{{svg.svgdata}}'});
+{% endfor %}
+
+huenodes = []
+{% for node in nodes %}
+{% if node.type == 'room' %}
+huenodes.push({'id':{{node.seqid}},'type':'{{node.type}}', 'roomid':{{node.roomid}},'x':{{node.x}},'y':{{node.y}}, 'label': '{{node.label}}', 'shape':'{{node.shape}}'});
+{% elif node.type == 'start' %}
+huenodes.push({'id':{{node.seqid}},'type':'{{node.type}}', 'x':{{node.x}},'y':{{node.y}}, 'label': '{{node.label}}', 'shape':'{{node.shape}}'});
+{% else %}
+huenodes.push({'id':{{node.seqid}},'type':'{{node.type}}', 'x':{{node.x}},'y':{{node.y}}, 'label': '{{node.label}}', 'shape':'{{node.shape}}', 'image':{{node.image}}, 'size':{{node.size}}});
+{% endif %}
+{% endfor %}
+hueedges = [];
+{% for edge in edges %}
+hueedges.push({'from':{{edge.fromseqid}}, 'to':{{edge.toseqid}}, 'arrows':'{{edge.arrows}}'});
+{% endfor %}
+var interval;
+
+$(document).ready(function() {
+    updateMap();
+    restoreReserve();
+
+    $('input').on('focusin', function(){
+      $(this).data('val', $(this).val());
+    });
+
+    $('input').on('focusout', function(){
+      var checkObj = $(this);
+      var check = $(this).val();
+      var checkRoomId = $(this).attr("id").split("_")[1];
+      var checkOrder = $(this).attr("id").split("_")[2];
+      if(check != "" && (check.length < 4 || check.length > 4)){
+        alert("차량번호 4자리를 입력하세요");
+        $(this).val("");
+        return false;
+      }else{
+        $("input[name^=room_]").each(function(){
+          var eachRoomId = $(this).attr("id").split("_")[1];
+          var eachOrder = $(this).attr("id").split("_")[2];
+          var eachCarno = $(this).val();
+          if((checkRoomId != eachRoomId && checkOrder == eachOrder) || (checkRoomId == eachRoomId && checkOrder != eachOrder) || (checkRoomId != eachRoomId && checkOrder != eachOrder)){
+            if((check != "" || eachCarno != "") && check == eachCarno  ){
+              alert("이미 동일한 차량번호가 존재합니다.");
+              checkObj.val("");
+              return false;
+            }
+          }
+        });
+
+        var prev = $(this).data('val');
+        var count = $("#reserveDate_"+checkRoomId+"_"+checkOrder).text();
+          if((prev != '' && prev != undefined) && parseInt(count) > 0){
+           alert("이미 예약된 순번입니다.");
+           $(this).val(prev);
+           return false;
+          }
+      }
+    });
+
+   $('input').on('change', function(){
+     if($(this).val() != "" && $(this).val() != undefined){
+       $("#chgInputOrder").val($(this).attr("id"));
+     }else{
+        if($("#chgInputOrder").val() != "" && $("#chgInputOrder").val() != undefined){
+            $("#chgInputOrder").val("");
+        }
+     }
+   });
+});
+
+function convertCDNum(queryDate){
+  var countdownDt = new Date(queryDate).getTime();
+  var now = new Date().getTime();
+  var distance = countdownDt - now;
+  var result = Math.floor((distance / 1000 / 60) % 60);
+  return 31 + result; // 절대값
+}
+
+// 객실명 업데이트
+function updateRoom(id, label) {
+    nodes.update({'id': id, 'label': label})
+}
+
+function getNodeByPath(pathid)
+{
+    ns = nodes.getIds();
+    for(var i=0; i< ns.length; i++) {
+        var item = nodes.get(ns[i]);
+        if(item.roomid) {
+            if(item.roomid == pathid)
+                return item;
+        }
+    }
+    return null;
+}
+
+// 1. rooms에서, carno 있는 항목 추출
+// 2. 해당 항목의 rooms_id로 부터 paths의 id가 일치하는 항목의 paths를 구함
+// 3. sign 1-9까지 루프를 돌며, paths에서 sign(컬럼)의 값을 찾음
+// 4. 해당 sign에 차량 번호를 push 함
+// 5. 루프 종료 후, 4의 값으로 sign을 업데이트 함
+
+function getPath(roomid) {
+    for(var i in paths) {
+        if(paths[i].id == roomid) {
+            return paths[i].paths;
+        }
+    }
+}
+function fillDummy(p) {
+    var tmp  = {car_no:'', dir:''}
+    for ( var i=p.length; i < 3 ; i++ ) {
+        p.push(tmp);
+    }
+}
+
+function updateMap() {
+    for(var i in paths) {
+        n = getNodeByPath(paths[i].id); // 룸아이디로 노드의 id 구함
+        //데이터의 id
+        if(n != null){
+          updateRoom(n.id, paths[i].room_name);
+        }
+    }
+   /* var p0 = [], p1 = [], p2 = [], p3 = [], p4 = [], p5 = [], p6 = [], p7 = [], p8 = [];
+
+    for(var i in rooms) {
+        if(rooms[i].car_no != '') {
+            ps = getPath(rooms[i].room_id)
+            if(ps[0] != 'None' && ps[0] != 'END')   p0.push({car_no: rooms[i].car_no, dir: ps[0]});
+            if(ps[1] != 'None' && ps[1] != 'END')   p1.push({car_no: rooms[i].car_no, dir: ps[1]});
+            if(ps[2] != 'None' && ps[2] != 'END')   p2.push({car_no: rooms[i].car_no, dir: ps[2]});
+            if(ps[3] != 'None' && ps[3] != 'END')   p3.push({car_no: rooms[i].car_no, dir: ps[3]});
+            if(ps[4] != 'None' && ps[4] != 'END')   p4.push({car_no: rooms[i].car_no, dir: ps[4]});
+            if(ps[5] != 'None' && ps[5] != 'END')   p5.push({car_no: rooms[i].car_no, dir: ps[5]});
+            if(ps[6] != 'None' && ps[6] != 'END')   p6.push({car_no: rooms[i].car_no, dir: ps[6]});
+            if(ps[7] != 'None' && ps[7] != 'END')   p7.push({car_no: rooms[i].car_no, dir: ps[7]});
+            if(ps[8] != 'None' && ps[8] != 'END')   p8.push({car_no: rooms[i].car_no, dir: ps[8]});
+        }
+    }
+    fillDummy(p0); fillDummy(p1); fillDummy(p2); fillDummy(p3);
+    fillDummy(p4); fillDummy(p5); fillDummy(p6); fillDummy(p7);
+    fillDummy(p8);
+
+    nodes.update({id:100,  image: createImage(p0[0].car_no, p0[0].dir, p0[1].car_no, p0[1].dir, p0[2].car_no, p0[2].dir)})
+    nodes.update({id:101,  image: createImage(p1[0].car_no, p1[0].dir, p1[1].car_no, p1[1].dir, p1[2].car_no, p1[2].dir)})
+    nodes.update({id:102,  image: createImage(p2[0].car_no, p2[0].dir, p2[1].car_no, p2[1].dir, p2[2].car_no, p2[2].dir)})
+    nodes.update({id:103,  image: createImage(p3[0].car_no, p3[0].dir, p3[1].car_no, p3[1].dir, p3[2].car_no, p3[2].dir)})
+    nodes.update({id:104,  image: createImage(p4[0].car_no, p4[0].dir, p4[1].car_no, p4[1].dir, p4[2].car_no, p4[2].dir)}) */
+ //   nodes.update({id:105,  image: createImage(p5[0].car_no, p5[0].dir, p5[1].car_no, p5[1].dir, p5[2].car_no, p5[2].dir)})
+ //   nodes.update({id:106,  image: createImage(p6[0].car_no, p6[0].dir, p6[1].car_no, p6[1].dir, p6[2].car_no, p6[2].dir)})
+ //   nodes.update({id:107,  image: createImage(p7[0].car_no, p7[0].dir, p7[1].car_no, p7[1].dir, p7[2].car_no, p7[2].dir)})
+ //   nodes.update({id:108,  image: createImage(p8[0].car_no, p8[0].dir, p8[1].car_no, p8[1].dir, p8[2].car_no, p8[2].dir)})
+}
+
+function restoreReserve(){
+
+  for(var i=0; i<reserves.length; i++){
+    updateDestNode(reserves[i].roomid, reserves[i].carno, nodes);
+    $("input[name^=room_]").each(function(){
+      var input_roomid = $(this).attr("id").split("_")[1];
+      var input_order = $(this).attr("id").split("_")[2];
+      var carno = reserves[i].carno;
+      if(reserves[i].roomid == input_roomid && reserves[i].order == input_order){
+        if(classificationMap(reserves[i].roomid) == 1){
+          if(window['carnoArr_sign'+classificationMap(reserves[i].roomid)].length < 3){
+              var isExist = (window['carnoArr_sign'+classificationMap(reserves[i].roomid)].indexOf(reserves[i].roomid+"_"+carno+"_"+input_order)!== -1);
+                if(!isExist){
+                  window['carnoArr_sign'+classificationMap(reserves[i].roomid)].push(reserves[i].roomid+"_"+carno+"_"+input_order);
+                }
+          }else{
+              var isExist = (window['carnoArr_sign'+classificationMap(reserves[i].roomid)].indexOf(reserves[i].roomid+"_"+carno+"_"+input_order)!== -1);
+              if(!isExist){
+                  window['carnoArr_sign'+classificationMap(reserves[i].roomid)].push(reserves[i].roomid+"_"+carno+"_"+input_order);
+              }
+              window['carnoArr_sign'+classificationMap(reserves[i].roomid)].shift();
+          }
+        }else{
+          for(var j=classificationMap(reserves[i].roomid); j<classificationMap(reserves[i].roomid)+classificationMap(reserves[i].roomid); j++){
+            var idx = j-classificationMap(reserves[i].roomid)+1;
+            if(window['carnoArr_sign'+idx].length < 3){
+              var isExist = (window['carnoArr_sign'+idx].indexOf(reserves[i].roomid+"_"+carno+"_"+input_order)!== -1);
+                if(!isExist){
+                  window['carnoArr_sign'+idx].push(reserves[i].roomid+"_"+carno+"_"+input_order);
+                }
+            }else{
+              var isExist = (window['carnoArr_sign'+idx].indexOf(reserves[i].roomid+"_"+carno+"_"+input_order)!== -1);
+              if(!isExist){
+                  window['carnoArr_sign'+idx].push(reserves[i].roomid+"_"+carno+"_"+input_order);
+              }
+              window['carnoArr_sign'+idx].shift();
+            }
+          }
+        }
+      $(this).val(carno);
+      $("#reserveDate_"+reserves[i].roomid+"_"+reserves[i].order).empty();
+      $("#reserveDate_"+reserves[i].roomid+"_"+reserves[i].order).text(reserves[i].reserveDate);
+      }
+
+
+    });
+    if(i+1 == reserves.length){
+
+
+  }
+  var roomid = reserves[i].roomid;
+  var destAddr = "";
+     if(roomid >= 5){
+        destAddr = pad(roomid,2);
+     }else{
+       if(roomid%2 == 0){ // 짝수일때
+         if(roomid-2 == 0){
+           destAddr = pad(roomid+7,2);
+         }else{
+           destAddr = pad(roomid+3,2);
+         }
+       }else{
+          if(roomid-3 == 0){
+           destAddr = pad(roomid+5,2);
+          }else{
+           destAddr = pad(roomid+9,2);
+          }
+       }
+     }
+
+  trnsfSerialData = '<1'+destAddr+'015'+reserves[i].carno+'11>'; //센서에 보낼 데이터를 생성한다
+  signalArr.push(trnsfSerialData); //Ajax 로 데이터 송출
+
+  }
+  updateNode(carnoArr_sign1, carnoArr_sign2, carnoArr_sign3, paths);
+
+  sendSignal(signalArr);
+
+}
+
+
+function classificationMap(roomid){
+  if(roomid <2){
+    return 1;
+  }else if(roomid >1 && roomid <4){
+    return 2;
+  }else{
+    return 3;
+  }
+
+}
+/*
+    {id: 100, type: 'sign', x:0, y:-200, label: 'Sign 1', shape: 'image', image: createImage('1234','l','2345','u','3456','r'), size:50},
+    {id: 101, type: 'sign', x:0, y:-400, label: 'Sign 2', shape: 'image', image: createImage('1234','l','2345','u','3456','r'), size:50},
+    {id: 102, type: 'sign', x:200, y:-400, label: 'Sign 3', shape: 'image', image: createImage('1234','l','2345','u','3456','r'), size:50},
+    {id: 103, type: 'sign', x:200, y:-600, label: 'Sign 4', shape: 'image', image: createImage('1234','l','2345','u','3456','r'), size:50},
+    {id: 104, type: 'sign', x:400, y:-400, label: 'Sign 5', shape: 'image', image: createImage('1234','l','2345','u','3456','r'), size:50},
+*/
+
+/*
+1. 차량 등록 --> 이정표 시작 --> 이정표 중지
+2. 차량의 목적지에 따른 이정표별 방향 추출
+2. 모든 이정표에 차량 등록
+3.
+*/
+</script>
+<input type="hidden" value="" id="chgInputOrder" />
+<div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8" panel panel-default></div>
+    <div class="col-xs-6" id="mynetwork" ></div>
+    <div class="col-xs-6" id="mylist" style="margin-bottom:0px;">
+         <table class="table table-striped table-sm">
+        <thead class="thead-dark">
+        <tr>
+            <th scope="col">숙소명</th>
+            <th scope="col">차량번호</th>
+            <th scope="col">남은시각(분)</th>
+            <th scope="col">데이터전달</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for r in rooms %}
+        <tr>
+
+
+            <tr>
+            <td class="align-middle" rowspan="3" style="background-color:rgba(0,0,0,.05);">{{r.room_name}}</td>
+            <td class="align-middle" ><input type="text" value="{{r.car_no1}}" size="4" maxlength="4" id="room_{{r.id}}_1" name="room_{{r.id}}"></td>
+            <td class="align-middle" style="border-right: 1px solid #dee2e6;"><span id="reserveDate_{{r.id}}_1">{{r.limittime}}</span></td>
+            <td class="align-middle" rowspan="3"><button class="btn btn-primary btn-sm" onclick='start_nav("{{ r.id }}")'>
+                이정표 시작</button></td>
+            </tr>
+            <tr style="background-color:#fff;">
+            <td class="align-middle"><input type="text" value="{{r.car_no2}}" size="4" maxlength="4" id="room_{{r.id}}_2" name="room_{{r.id}}"></td>
+            <td class="align-middle" style="border-right: 1px solid #dee2e6;"><span id="reserveDate_{{r.id}}_2">{{r.limittime}}</span></td>
+            </tr>
+            <tr style="border-bottom: 1px solid #dee2e6;">
+            <td class="align-middle"><input type="text" value="{{r.car_no3}}" size="4" maxlength="4" id="room_{{r.id}}_3" name="room_{{r.id}}"></td>
+            <td class="align-middle" style="border-right: 1px solid #dee2e6;"><span id="reserveDate_{{r.id}}_3">{{r.limittime}}</span></td>
+            </tr>
+
+         </tr>
+        {% endfor %}
+
+        </tbody>
+    </table>
+    </div>
+    <div class="col-md-2"></div>
+</div>
+
+<script type="text/javascript">
+//id -> 전광판기기번호
+//no -> 차량번호
+//dr -> 해당 차량의 목적지까지 방향
+// GLOBAL
+  clickFlag = false;
+  // create an array with nodes
+  // 맵에 데이터의 roomid 를 일단 매핑
+  var nodes = new vis.DataSet(huenodes);
+  /*var nodes = new vis.DataSet([
+    {id: 1, type: 'start', x:0, y:0, label: ' START ', shape: 'circle'},
+    {id: 2, type: 'room', 'roomid': 1, x:-200, y:-200, label: 'Room 1', shape: 'circle'},
+    {id: 3, type: 'room', 'roomid': 2, x:-200, y:-400, label: 'Room 2', shape: 'circle'},
+    {id: 4, type: 'room', 'roomid': 3, x:0, y:-600, label: 'Room 3', shape: 'circle'},
+    {id: 5, type: 'room', 'roomid': 4, x:200, y:-600, label: 'Room 4', shape: 'circle'}, //배나무
+    {id: 6, type: 'room', 'roomid': 5, x:400, y:-400, label: 'Room 5', shape: 'circle'}, //잣나무
+    {id: 7, type: 'room', 'roomid': 6, x:200, y:-200, label: 'Room 6', shape: 'circle'},
+
+    {id: 100, type: 'sign', x:0, y:-200, label: 'Sign 1', shape: 'image', image: createImage(100, new Array(), new Array()), size:50},
+    {id: 101, type: 'sign', x:0, y:-400, label: 'Sign 2', shape: 'image', image: createImage(101, new Array(), new Array()), size:50},
+    {id: 102, type: 'sign', x:200, y:-400, label: 'Sign 3', shape: 'image', image: createImage(102, new Array(), new Array()), size:50},
+
+
+  ]);
+
+  var edgesArr = [
+    {from: 1, to: 100, arrows:'to'},
+    {from: 100, to: 2, arrows:'to'},
+    {from: 100, to: 101, arrows:'to'},
+    {from: 101, to: 3, arrows:'to'},
+    {from: 101, to: 4, arrows:'to'},
+    {from: 101, to: 102, arrows:'to'},
+    {from: 102, to: 5, arrows:'to'},
+    {from: 102, to: 6, arrows:'to'},
+    {from: 102, to: 7, arrows:'to'}
+
+  ];*/
+  // create an array with edges
+  var edges = new vis.DataSet(hueedges);
+
+  // create a network
+  var container = document.getElementById('mynetwork');
+  var data = {
+    nodes: nodes,
+    edges: edges
+  };
+  var options = {
+    edges: {
+      font: {
+        size: 12
+      },
+      smooth: {
+        type: 'straightCross'
+      }
+    },
+    nodes: {
+      shape: 'box',
+      font: {
+        bold: {
+          color: '#0077aa'
+        }
+      }
+    },
+    physics: {
+      enabled: false
+    }
+  };
+  var network = new vis.Network(container, data, options);
+
+  var signIds = [];
+  var rommids = [];
+  ns = nodes.getIds();
+  for(var i=0; i< ns.length; i++) {
+    var item = nodes.get(ns[i]);
+    if(item.type=='sign') {
+        signIds.push(ns[i]+"_"+item.label);
+    }
+  }
+
+var acculNaviArr = [];
+//인자목록
+// 1. arguments.length 2
+// > carnoArr_sign1, paths
+// 2. arguments.length 3
+// > carnoArr_sign1, carnoArr_sign2, paths
+// 3. arguments.length 4
+// > carnoArr_sign1, carnoArr_sign2, carnoArr_sign3, paths
+function updateNode() {
+
+    if(arguments.length == 2){
+      nodes.update({'id': 100, 'label': 'Sign 1', 'image': createImage(100, arguments[0],arguments[1])});
+
+    }else if(arguments.length == 3){
+      nodes.update({'id': 100, 'label': 'Sign 1', 'image': createImage(100, arguments[0],arguments[2])});
+      nodes.update({'id': 101, 'label': 'Sign 2', 'image': createImage(101, arguments[1],arguments[2])});
+    }else if(arguments.length == 4){
+      nodes.update({'id': 100, 'label': 'Sign 1', 'image': createImage(100, arguments[0],arguments[3])});
+      nodes.update({'id': 101, 'label': 'Sign 2', 'image': createImage(101, arguments[1],arguments[3])});
+      nodes.update({'id': 102, 'label': 'Sign 3', 'image': createImage(102, arguments[2],arguments[3])});
+    }
+    ns = nodes.getIds();
+    var save_data = '';
+    for(var i=0; i< ns.length; i++) {
+        var item = nodes.get(ns[i]);
+        if(item.type == 'sign'){
+           save_data += "~"+item.id+"@"+item.image;
+
+        }
+   }
+   var idVal = $("#chgInputOrder").val();
+   if(idVal != ""){
+     var lastChangedInputVal = $("#"+idVal).val();
+     var roomid = idVal.split("_")[1];
+     var destAddr = "";
+     if(roomid >= 5){
+        destAddr = pad(roomid,2);
+     }else{
+       if(roomid%2 == 0){ // 짝수일때
+         if(roomid-2 == 0){
+           destAddr = pad(roomid+7,2);
+         }else{
+           destAddr = pad(roomid+3,2);
+         }
+       }else{
+          if(roomid-3 == 0){
+           destAddr = pad(roomid+5,2);
+          }else{
+           destAddr = pad(roomid+9,2);
+          }
+       }
+     }
+     trnsfSerialData = '<1'+destAddr+'015'+lastChangedInputVal+'11>'; //센서에 보낼 데이터를 생성한다
+     signalArr.push(trnsfSerialData); //Ajax 로 데이터 송출
+     sendSignal(signalArr);
+     updateDestNode(roomid,lastChangedInputVal,nodes);
+   }
+
+}
+function sendSignal(data){
+  $.ajax({
+    type: "POST", // 데이터를 전송하는 방법을 지정
+    url: "/navi/signal", // 통신할 url을 지정
+    data: {'signalData[]': data, 'csrfmiddlewaretoken': '{{ csrf_token }}'}, // 서버로 데이터 전송시 옵션
+    dataType: "json", // 서버측에서 전송한 데이터를 어떤 형식의 데이터로서 해석할 것인가를 지정, 없으면 알아서 판단
+    // 서버측에서 전송한 Response 데이터 형식 (json)
+    success: function(response){ // 통신 성공시 - 동적으로 좋아요 갯수 변경, 유저 목록 변경
+      signalArr = [];
+      datas = response.result.sort();
+      for(var i =0; i<datas.length; i++){
+       var signalId = datas[i].substring(2,4);
+       var signalContent = datas[i];
+       var carno = datas[i].substring(7,11);
+       var direction = rewindDirection(datas[i].substring(11,12));
+       console.log(signalId+' 전광판 Send 내용:'+signalContent+', 해석: 차량번호>'+carno+' 방향:'+direction );
+      }
+    },
+    error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+      signalArr = [];
+    }
+  });
+}
+function saveReservation(data){
+  $.ajax({
+    type: "POST", // 데이터를 전송하는 방법을 지정
+    url: "/navi/reservation", // 통신할 url을 지정
+    data: {'reserve_data': data, 'csrfmiddlewaretoken': '{{ csrf_token }}'}, // 서버로 데이터 전송시 옵션
+    dataType: "json", // 서버측에서 전송한 데이터를 어떤 형식의 데이터로서 해석할 것인가를 지정, 없으면 알아서 판단
+    // 서버측에서 전송한 Response 데이터 형식 (json)
+    success: function(response){ // 통신 성공시 - 동적으로 좋아요 갯수 변경, 유저 목록 변경
+      var datetime = response.reserveDate;
+      var parseCountdown = convertCDNum(datetime);
+      var roomid = data.split("_")[0];
+      var order = data.split("_")[2];
+      $("#reserveDate_"+roomid+"_"+order).empty().text(parseCountdown);
+    },
+    error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+
+    }
+  });
+}
+
+var carnoArr_sign1 = [];
+var carnoArr_sign2 = [];
+var carnoArr_sign3 = [];
+var signalArr = [];
+function start_nav(roomId, idx) {
+
+  clickFlag = true;
+  var idVal = $("#chgInputOrder").val();
+  if(idVal == "" || idVal == undefined){
+    alert("시작할 차량번호를 입력하세요");
+    return false;
+  }else{
+    checkCarno = $("#"+idVal).val();
+    checkRoomId = idVal.split("_")[1];
+    checkOrder = idVal.split("_")[2];
+    if(checkDupCarno(checkRoomId, checkCarno, checkOrder)){
+      alert("동일한 차번호가 존재합니다. 수정해주세요");
+      return false;
+    }
+  }
+  $("input[name^=room_"+roomId+"]").each(function(){
+
+    var order = $(this).attr("id").split("_")[2];
+    if($(this).val() != "" && !$(this).val() != undefined){
+    if(classificationMap(roomId) == 1){
+      if(window['carnoArr_sign'+classificationMap(roomId)].length < 3){
+          var isExist = (window['carnoArr_sign'+classificationMap(roomId)].indexOf(roomId+"_"+$(this).val()+"_"+order)!== -1);
+            if(!isExist){
+              window['carnoArr_sign'+classificationMap(roomId)].push(roomId+"_"+$(this).val()+"_"+order);
+            }
+      }else{
+          var isExist = (window['carnoArr_sign'+classificationMap(roomId)].indexOf(roomId+"_"+$(this).val()+"_"+order)!== -1);
+          if(!isExist){
+              window['carnoArr_sign'+classificationMap(roomId)].push(roomId+"_"+$(this).val()+"_"+order);
+          }
+          window['carnoArr_sign'+classificationMap(roomId)].shift();
+      }
+    }else{
+       for(var j=classificationMap(roomId); j<classificationMap(roomId)+classificationMap(roomId); j++){
+        var idx = j-classificationMap(roomId)+1;
+        if(window['carnoArr_sign'+idx].length < 3){
+          var isExist = (window['carnoArr_sign'+idx].indexOf(roomId+"_"+$(this).val()+"_"+order)!== -1);
+            if(!isExist){
+              window['carnoArr_sign'+idx].push(roomId+"_"+$(this).val()+"_"+order);
+            }
+        }else{
+          var isExist = (window['carnoArr_sign'+idx].indexOf(roomId+"_"+$(this).val()+"_"+order)!== -1);
+          if(!isExist){
+              window['carnoArr_sign'+idx].push(roomId+"_"+$(this).val()+"_"+order);
+          }
+          window['carnoArr_sign'+idx].shift();
+        }
+      }
+    }
+  }
+  });
+
+  if(carnoArr_sign1.length <= 0 && carnoArr_sign2.length <= 0 && carnoArr_sign3.length <= 0) {
+    alert("차량번호를 입력하세요");
+    return false;
+  }
+
+  if(roomId < 2){
+    updateNode(carnoArr_sign1, paths);
+  }else if(roomId > 1 && roomId < 4){
+    updateNode(carnoArr_sign1, carnoArr_sign2, paths);
+  }else{
+    updateNode(carnoArr_sign1, carnoArr_sign2, carnoArr_sign3, paths);
+  }
+
+
+
+
+
+}
+
+</script>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}- List {% endblock %}
+{% block content %}
+<script>
+paths = [];
+{% for path in paths %}
+p = []
+p.push('{{path.path1}}');
+p.push('{{path.path2}}');
+p.push('{{path.path3}}');
+p.push('{{path.path4}}');
+p.push('{{path.path5}}');
+p.push('{{path.path6}}');
+p.push('{{path.path7}}');
+p.push('{{path.path8}}');
+p.push('{{path.path9}}');
+pinfo={'id': '{{path.room.id}}', 'room_name': '{{path.room.room_name}}', 'paths': p }
+paths.push(pinfo);
+{% endfor %}
+
+function start_nav(roomid, carno) {
+    if (!carno) {
+        alert('차량 번호가 지정되지 않았습니다.');
+        return;
+    }
+    for(var i in paths) {
+        if(paths[i].id == roomid) {
+            alert(paths[i].room_name+'/'+carno);
+            return;
+        }
+    }
+}
+
+function getPathString(roomid)
+{
+    p = [];
+    var done = false;
+    var str = [];
+    for (var i=0 ; i < p.length; i++) {
+        if(done) break;
+        switch(dir) {
+            case '직진': str.push('&uarr;'); break;
+            case '우회전': str.push('&rarr;'); break;
+            case '좌회전': str.push('&larr;'); break;
+            case 'END': done = true; break;
+        }
+    }
+    return str.join();
+}
+
+</script>
+<div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8" panel panel-default></div>
+    <table class="table table-striped table-hover table-sm">
+        <thead class="thead-dark">
+        <tr><th scope="col">#</th>
+            <th scope="col">숙소명</th>
+            <th scope="col">예약자</th>
+            <th scope="col">차량번호</th>
+            <th scope="col">단말기</th>
+            <th scope="col">이정표</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for r in rooms %}
+        <tr class="clickable-row">
+            <th scope="row" class="align-middle">#</th>
+            <td class="align-middle">{{r.room_name}}</td>
+            <td class="align-middle">{{r.user.first_name}} {{r.user.last_name}}</td>
+            <td class="align-middle">{{r.car_no}}</td>
+            <td class="align-middle">{{r.device1}}</td>
+            <td class="align-middle"><button class="btn btn-primary btn-sm" onclick='start_nav({{ r.id }},{{ r.car_no }})'>
+                이정표 시작</button></td>
+        {% endfor %}
+        </tr>
+        </tbody>
+    </table>
+     <div class="col-md-2"></div>
+</div>
+{% endblock %}

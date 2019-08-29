@@ -1,0 +1,102 @@
+import json
+import time
+from datetime import datetime, timedelta
+import serial
+from django.db.models import Q
+from django.http import HttpResponse
+from django.shortcuts import render
+
+from .models import Room, RoomPath, SignMappingData, RoomReservation, Nodes, Edges
+
+
+# Create your views here.
+def login(request):
+    return render(request, 'hue/login.html',{})
+
+def room_list(request):
+    rooms = Room.objects.all()
+    paths = RoomPath.objects.all()
+    return render(request, 'hue/list.html', {'rooms': rooms, 'paths': paths})
+
+
+def navi_list(request):
+    if not request.user.is_authenticated:
+        return render(request, 'hue/login.html',{})
+    else:
+        time_threshold = datetime.now() - timedelta(minutes=30)
+        rooms = Room.objects.all()
+        paths = RoomPath.objects.all()
+        nodes = Nodes.objects.filter(parkid='A')
+        edges = Edges.objects.filter(pid='A')
+        RoomReservation.objects.filter(reserveDate__lt=time_threshold).delete()
+        reserves = RoomReservation.objects.all().order_by('reserveDate')
+        svgs = SignMappingData.objects.all()
+        return render(request, 'hue/navi.html', {'rooms': rooms, 'paths': paths, 'reserves': reserves, 'svgs': svgs, 'nodes':nodes, 'edges':edges})
+
+def signal(request):
+    port = 'COM4'  # 시리얼 포트
+    baud = 115200  # 시리얼 보드레이트(통신속도)
+    data = request.POST.getlist('signalData[]')
+    #print('Transfer Data::%s', data)
+    ser = serial.Serial(port, baud)
+    for item in data:
+        #if ser.in_waiting == 1:
+        text = item+'\n'
+        for char in list(text):
+        #print(text.encode('ascii'))
+        #ser.name()
+            ser.write(char.encode('ascii'))
+            time.sleep(0.1)
+        result = ser.readline()
+        print(result)
+        time.sleep(0.1)
+    ser.flush()
+    ser.close()
+
+    return HttpResponse(json.dumps({'result': data}), content_type="application/json")
+
+def reservation(request):
+    reserve_data = request.POST['reserve_data']
+    p1 = reserve_data.split('_')[0]  # roomid
+    p2 = reserve_data.split('_')[2]  # order
+    p3 = reserve_data.split('_')[1]  # carno
+    now = datetime.now()
+    origin_reserve_data = RoomReservation.objects.filter(
+        Q(roomid=p1) & Q(reserveOrder=p2)
+    )
+    if origin_reserve_data.count() > 0:
+        RoomReservation.objects.filter(roomid=p1, reserveOrder=p2).update(carno=p3, reserveDate=now)
+    else:
+        savedata = RoomReservation(roomid=p1, carno=p3, reserveOrder=p2)
+        savedata.save()
+
+    return HttpResponse(json.dumps({'reserveDate': now.isoformat()}), content_type="application/json")
+
+def svg(request):
+    svg_mapping_data = request.POST['save_data']
+    svg_mapping_data = svg_mapping_data.split('~')
+    SignMappingData.objects.all().delete()
+    iterdatas = iter(svg_mapping_data)
+    next(iterdatas)
+    for data in iterdatas:
+        print(data)
+        p = data.split('@')
+        p1 = p[0]
+        p2 = p[1]
+        savedata = SignMappingData(signid=p1, svgdata=p2)
+        savedata.save()
+
+    return HttpResponse(json.dumps({'result': 'ok'}), content_type="application/json")
+
+
+#
+'''
+import socket
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect(('localhost', 50000))
+s.sendall('Hello, world')
+data = s.recv(1024)
+s.close()
+print 'Received', repr(data)
+'''
+#
