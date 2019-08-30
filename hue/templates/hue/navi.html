@@ -104,23 +104,28 @@ function createImage(signid, carnoArr, paths, clickedId) {
       realSignId = '04';
     }
       var breakpoint = false;
+      var j = 0;
+      var checkpoint = false;
+      if(carnoArr.length > 3){ // 차량목록에 갯수가 4개 이상일때는
+        j = (carnoArr.length-1) -2; //뒤에서 3개의 차량만 디스플레이되게..(TO-DO>>모든차량을 이터레이션돌면서 3개씩 디스플레이해야함)
+      }
+      var yIdx = 0;
       if(carnoArr.length > 0){
-       for(var j=0; j<carnoArr.length; j++){
+       for(j; j<carnoArr.length; j++){
          for(var k=0; k<paths.length; k++){
              if(paths[k].id == carnoArr[j].split("_")[0]){
                for(var l=0; l<paths[k].paths.length; l++){
                  if(convertDirection(paths[k].paths[l]) < 5){
                    if(signid < 102){ // 2번째 전광판까지는 정면에서 보기때문에 Rotate 를 사용하지 않는다.
-                     svgContent += '<text x="15" y="'+(j+1)*30+'" style="font-size:20px;fill:#000000;">'+ carnoArr[j].split("_")[1] +'</text>' +
-                                   '<text x="70" y="'+(j+1)*30+'" style="font-size:30px;fill:#000000;">'+ convertArrow(convertDirection(paths[k].paths[l+(signid-100)])) +'</text>';
+                     svgContent += '<text x="15" y="'+(yIdx+1)*30+'" style="font-size:20px;fill:#000000;">'+ carnoArr[j].split("_")[1] +'</text>' +
+                                   '<text x="70" y="'+(yIdx+1)*30+'" style="font-size:30px;fill:#000000;">'+ convertArrow(convertDirection(paths[k].paths[l+(signid-100)])) +'</text>';
+                     yIdx++;
                      if(carnoArr[j] == clickedId){
                        trnsfSerialData = '<1'+realSignId+'015'+carnoArr[j].split("_")[1]+convertDirection(paths[k].paths[l+(signid-100)])+'1>'; //센서에 보낼 데이터를 생성한다
                        signalArr.push(trnsfSerialData); //Ajax 로 데이터 송출
                        saveReservation(carnoArr[j]);
                      }
-                     /*if(clickFlag){
-                       saveReservation(carnoArr[j]);
-                     }*/
+
                      break;
                    }else if(signid == 102){ // 3번째 전광판은 90도 꺾여져있기 때문에 화면에 표출되는 SVG 도 90도 Rotate 하여 표현한다.
                      if(carnoArr[j].split("_")[1] == " " || carnoArr[j].split("_")[1] == undefined){
@@ -133,9 +138,7 @@ function createImage(signid, carnoArr, paths, clickedId) {
                        signalArr.push(trnsfSerialData); //Ajax 로 데이터 송출
                        saveReservation(carnoArr[j]);
                      }
-                     /*if(clickFlag){
-                       saveReservation(carnoArr[j]);
-                     }*/
+
                      break;
                    }
                  }// 전광판 비교 end
@@ -374,33 +377,33 @@ function restoreReserve(){
       var carno = reserves[i].carno;
       if(reserves[i].roomid == input_roomid && reserves[i].order == input_order){
         if(classificationMap(reserves[i].roomid) == 1){
-          if(window['carnoArr_sign'+classificationMap(reserves[i].roomid)].length < 3){
-              var isExist = (window['carnoArr_sign'+classificationMap(reserves[i].roomid)].indexOf(reserves[i].roomid+"_"+carno+"_"+input_order)!== -1);
-                if(!isExist){
+          //if(window['carnoArr_sign'+classificationMap(reserves[i].roomid)].length < 3){
+              //var isExist = (window['carnoArr_sign'+classificationMap(reserves[i].roomid)].indexOf(reserves[i].roomid+"_"+carno+"_"+input_order)!== -1);
+              //  if(!isExist){
                   window['carnoArr_sign'+classificationMap(reserves[i].roomid)].push(reserves[i].roomid+"_"+carno+"_"+input_order);
-                }
-          }else{
-              var isExist = (window['carnoArr_sign'+classificationMap(reserves[i].roomid)].indexOf(reserves[i].roomid+"_"+carno+"_"+input_order)!== -1);
-              if(!isExist){
-                  window['carnoArr_sign'+classificationMap(reserves[i].roomid)].push(reserves[i].roomid+"_"+carno+"_"+input_order);
-              }
-              window['carnoArr_sign'+classificationMap(reserves[i].roomid)].shift();
-          }
+              //  }
+          //}else{
+            //  var isExist = (window['carnoArr_sign'+classificationMap(reserves[i].roomid)].indexOf(reserves[i].roomid+"_"+carno+"_"+input_order)!== -1);
+            //  if(!isExist){
+            //      window['carnoArr_sign'+classificationMap(reserves[i].roomid)].push(reserves[i].roomid+"_"+carno+"_"+input_order);
+            //  }
+            //  window['carnoArr_sign'+classificationMap(reserves[i].roomid)].shift();
+          //}
         }else{
           for(var j=classificationMap(reserves[i].roomid); j<classificationMap(reserves[i].roomid)+classificationMap(reserves[i].roomid); j++){
             var idx = j-classificationMap(reserves[i].roomid)+1;
-            if(window['carnoArr_sign'+idx].length < 3){
-              var isExist = (window['carnoArr_sign'+idx].indexOf(reserves[i].roomid+"_"+carno+"_"+input_order)!== -1);
-                if(!isExist){
+           // if(window['carnoArr_sign'+idx].length < 3){
+            //  var isExist = (window['carnoArr_sign'+idx].indexOf(reserves[i].roomid+"_"+carno+"_"+input_order)!== -1);
+            //    if(!isExist){
                   window['carnoArr_sign'+idx].push(reserves[i].roomid+"_"+carno+"_"+input_order);
-                }
-            }else{
-              var isExist = (window['carnoArr_sign'+idx].indexOf(reserves[i].roomid+"_"+carno+"_"+input_order)!== -1);
-              if(!isExist){
-                  window['carnoArr_sign'+idx].push(reserves[i].roomid+"_"+carno+"_"+input_order);
-              }
-              window['carnoArr_sign'+idx].shift();
-            }
+            //    }
+           // }else{
+             // var isExist = (window['carnoArr_sign'+idx].indexOf(reserves[i].roomid+"_"+carno+"_"+input_order)!== -1);
+             // if(!isExist){
+               //   window['carnoArr_sign'+idx].push(reserves[i].roomid+"_"+carno+"_"+input_order);
+             // }
+            //  window['carnoArr_sign'+idx].shift();
+           // }
           }
         }
       $(this).val(carno);
@@ -438,7 +441,7 @@ function restoreReserve(){
   //signalArr.push(trnsfSerialData); //Ajax 로 데이터 송출
 
   }
-  updateNode(carnoArr_sign1, carnoArr_sign2, carnoArr_sign3, paths);
+  updateNode(carnoArr_sign1, carnoArr_sign2, carnoArr_sign3, paths, "");
 
   //sendSignal(signalArr);
 
@@ -491,7 +494,7 @@ function classificationMap(roomid){
 
 
             <tr>
-            <td class="align-middle" style="background-color:rgba(0,0,0,.05);">{{r.room_name}}</td>
+            <td class="align-middle" rowspan="4" style="background-color:rgba(0,0,0,.05);">{{r.room_name}}</td>
             <td class="align-middle" ><input type="text" value="{{r.car_no1}}" size="4" maxlength="4" id="room_{{r.id}}_1" name="room_{{r.id}}"></td>
             <td class="align-middle" style="border-right: 1px solid #dee2e6;"><span id="reserveDate_{{r.id}}_1">{{r.limittime}}</span></td>
             <td class="align-middle" ><button class="btn btn-primary btn-sm" onclick='start_nav("room_{{r.id}}_1")'>
@@ -617,9 +620,13 @@ function updateNode() {
       nodes.update({'id': 101, 'label': 'Sign 2', 'image': createImage(101, arguments[1],arguments[2],clickedCarId)});
     }else if(arguments.length == 5){
       clickedCarId = arguments[4];
+
       nodes.update({'id': 100, 'label': 'Sign 1', 'image': createImage(100, arguments[0],arguments[3],clickedCarId)});
+      console.log(createImage(100, arguments[0],arguments[3],clickedCarId));
       nodes.update({'id': 101, 'label': 'Sign 2', 'image': createImage(101, arguments[1],arguments[3],clickedCarId)});
+      console.log(createImage(101, arguments[1],arguments[3],clickedCarId));
       nodes.update({'id': 102, 'label': 'Sign 3', 'image': createImage(102, arguments[2],arguments[3],clickedCarId)});
+      console.log(createImage(102, arguments[2],arguments[3],clickedCarId));
     }
     ns = nodes.getIds();
     var save_data = '';
@@ -720,12 +727,14 @@ function start_nav(roomId) {
     var roomObj = $("#"+roomId);
     var order = roomObj.attr("id").split("_")[2];
     var chkSign = roomObj.attr("id").split("_")[1];
+    var carno = roomObj.val();
+    var fullId = chkSign+"_"+carno+"_"+order;
     //if($(this).val() != "" && !$(this).val() != undefined){
     if(classificationMap(chkSign) == 1){
       if(window['carnoArr_sign'+classificationMap(chkSign)].length < 101){
           //var isExist = (window['carnoArr_sign'+classificationMap(chkSign)].indexOf(roomId)!== -1);
           //  if(!isExist){
-              window['carnoArr_sign'+classificationMap(chkSign)].push(roomId);
+              window['carnoArr_sign'+classificationMap(chkSign)].push(fullId);
            // }
       }
     }else{
@@ -734,14 +743,14 @@ function start_nav(roomId) {
         if(window['carnoArr_sign'+idx].length < 100){
           //var isExist = (window['carnoArr_sign'+idx].indexOf(roomId+"_"+$(this).val()+"_"+order)!== -1);
            // if(!isExist){
-              window['carnoArr_sign'+idx].push(roomId);
+              window['carnoArr_sign'+idx].push(fullId);
            // }
         }/*else{
-          var isExist = (window['carnoArr_sign'+idx].indexOf(roomId+"_"+$(this).val()+"_"+order)!== -1);
-          if(!isExist){
-              window['carnoArr_sign'+idx].push(roomId+"_"+$(this).val()+"_"+order);
-          }
-          window['carnoArr_sign'+idx].shift();
+         // var isExist = (window['carnoArr_sign'+idx].indexOf(roomId+"_"+$(this).val()+"_"+order)!== -1);
+        // if(!isExist){
+              window['carnoArr_sign'+idx].push(fullId);
+        //  }
+         // window['carnoArr_sign'+idx].shift();
         }*/
       }
     }
@@ -754,11 +763,11 @@ function start_nav(roomId) {
   }
 
   if(chkSign < 2){
-    updateNode(carnoArr_sign1, paths, roomId);
+    updateNode(carnoArr_sign1, paths, fullId);
   }else if(chkSign > 1 && chkSign < 4){
-    updateNode(carnoArr_sign1, carnoArr_sign2, paths, roomId);
+    updateNode(carnoArr_sign1, carnoArr_sign2, paths, fullId);
   }else{
-    updateNode(carnoArr_sign1, carnoArr_sign2, carnoArr_sign3, paths, roomId);
+    updateNode(carnoArr_sign1, carnoArr_sign2, carnoArr_sign3, paths, fullId);
   }
 
 
