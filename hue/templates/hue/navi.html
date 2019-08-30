@@ -87,7 +87,7 @@ function convertArrow(direction){
         return ' ';
     }
 }
-function createImage(signid, carnoArr, paths) {
+function createImage(signid, carnoArr, paths, clickedId) {
 
     var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="100" viewPort="0 0 120 100">' +
             '<rect x="5" y="5" rx="10" ry="10" width="110" height="90" style="fill:white;stroke:gray;stroke-width:5;" />' ;
@@ -113,11 +113,14 @@ function createImage(signid, carnoArr, paths) {
                    if(signid < 102){ // 2번째 전광판까지는 정면에서 보기때문에 Rotate 를 사용하지 않는다.
                      svgContent += '<text x="15" y="'+(j+1)*30+'" style="font-size:20px;fill:#000000;">'+ carnoArr[j].split("_")[1] +'</text>' +
                                    '<text x="70" y="'+(j+1)*30+'" style="font-size:30px;fill:#000000;">'+ convertArrow(convertDirection(paths[k].paths[l+(signid-100)])) +'</text>';
-                     trnsfSerialData = '<1'+realSignId+'015'+carnoArr[j].split("_")[1]+convertDirection(paths[k].paths[l+(signid-100)])+'1>'; //센서에 보낼 데이터를 생성한다
-                     signalArr.push(trnsfSerialData); //Ajax 로 데이터 송출
-                     if(clickFlag){
+                     if(carnoArr[j] == clickedId){
+                       trnsfSerialData = '<1'+realSignId+'015'+carnoArr[j].split("_")[1]+convertDirection(paths[k].paths[l+(signid-100)])+'1>'; //센서에 보낼 데이터를 생성한다
+                       signalArr.push(trnsfSerialData); //Ajax 로 데이터 송출
                        saveReservation(carnoArr[j]);
                      }
+                     /*if(clickFlag){
+                       saveReservation(carnoArr[j]);
+                     }*/
                      break;
                    }else if(signid == 102){ // 3번째 전광판은 90도 꺾여져있기 때문에 화면에 표출되는 SVG 도 90도 Rotate 하여 표현한다.
                      if(carnoArr[j].split("_")[1] == " " || carnoArr[j].split("_")[1] == undefined){
@@ -125,11 +128,14 @@ function createImage(signid, carnoArr, paths) {
                      }
                      svgContent += '<text x="15" y="-'+(((j+1)*90)-(120*j))+'" style="font-size:20px;fill:#000000;" transform = "rotate(90)">'+ carnoArr[j].split("_")[1]+'</text>' +
                                      '<text x="70" y="-'+(((j+1)*90)-(120*j))+'" style="font-size:30px;fill:#000000;" transform = "rotate(90)">'+ convertArrow(convertDirection(paths[k].paths[l+(signid-100)])) +'</text>';
-                     trnsfSerialData = '<1'+realSignId+'015'+carnoArr[j].split("_")[1]+convertDirection(paths[k].paths[l+(signid-100)])+'1>'; //센서에 보낼 데이터를 생성한다
-                     signalArr.push(trnsfSerialData); //Ajax 로 데이터 송출
-                     if(clickFlag){
+                     if(carnoArr[j] == clickedId){
+                       trnsfSerialData = '<1'+realSignId+'015'+carnoArr[j].split("_")[1]+convertDirection(paths[k].paths[l+(signid-100)])+'1>'; //센서에 보낼 데이터를 생성한다
+                       signalArr.push(trnsfSerialData); //Ajax 로 데이터 송출
                        saveReservation(carnoArr[j]);
                      }
+                     /*if(clickFlag){
+                       saveReservation(carnoArr[j]);
+                     }*/
                      break;
                    }
                  }// 전광판 비교 end
@@ -237,7 +243,8 @@ $(document).ready(function() {
         alert("차량번호 4자리를 입력하세요");
         $(this).val("");
         return false;
-      }else{
+      }
+      /*else{
         $("input[name^=room_]").each(function(){
           var eachRoomId = $(this).attr("id").split("_")[1];
           var eachOrder = $(this).attr("id").split("_")[2];
@@ -258,7 +265,7 @@ $(document).ready(function() {
            $(this).val(prev);
            return false;
           }
-      }
+      }*/
     });
 
    $('input').on('change', function(){
@@ -427,13 +434,13 @@ function restoreReserve(){
        }
      }
 
-  trnsfSerialData = '<1'+destAddr+'015'+reserves[i].carno+'11>'; //센서에 보낼 데이터를 생성한다
-  signalArr.push(trnsfSerialData); //Ajax 로 데이터 송출
+  //trnsfSerialData = '<1'+destAddr+'015'+reserves[i].carno+'11>'; //센서에 보낼 데이터를 생성한다
+  //signalArr.push(trnsfSerialData); //Ajax 로 데이터 송출
 
   }
   updateNode(carnoArr_sign1, carnoArr_sign2, carnoArr_sign3, paths);
 
-  sendSignal(signalArr);
+  //sendSignal(signalArr);
 
 }
 
@@ -484,19 +491,23 @@ function classificationMap(roomid){
 
 
             <tr>
-            <td class="align-middle" rowspan="3" style="background-color:rgba(0,0,0,.05);">{{r.room_name}}</td>
+            <td class="align-middle" style="background-color:rgba(0,0,0,.05);">{{r.room_name}}</td>
             <td class="align-middle" ><input type="text" value="{{r.car_no1}}" size="4" maxlength="4" id="room_{{r.id}}_1" name="room_{{r.id}}"></td>
             <td class="align-middle" style="border-right: 1px solid #dee2e6;"><span id="reserveDate_{{r.id}}_1">{{r.limittime}}</span></td>
-            <td class="align-middle" rowspan="3"><button class="btn btn-primary btn-sm" onclick='start_nav("{{ r.id }}")'>
+            <td class="align-middle" ><button class="btn btn-primary btn-sm" onclick='start_nav("room_{{r.id}}_1")'>
                 이정표 시작</button></td>
             </tr>
             <tr style="background-color:#fff;">
             <td class="align-middle"><input type="text" value="{{r.car_no2}}" size="4" maxlength="4" id="room_{{r.id}}_2" name="room_{{r.id}}"></td>
             <td class="align-middle" style="border-right: 1px solid #dee2e6;"><span id="reserveDate_{{r.id}}_2">{{r.limittime}}</span></td>
+            <td class="align-middle" ><button class="btn btn-primary btn-sm" onclick='start_nav("room_{{r.id}}_2")'>
+                이정표 시작</button></td>
             </tr>
             <tr style="border-bottom: 1px solid #dee2e6;">
             <td class="align-middle"><input type="text" value="{{r.car_no3}}" size="4" maxlength="4" id="room_{{r.id}}_3" name="room_{{r.id}}"></td>
             <td class="align-middle" style="border-right: 1px solid #dee2e6;"><span id="reserveDate_{{r.id}}_3">{{r.limittime}}</span></td>
+            <td class="align-middle" ><button class="btn btn-primary btn-sm" onclick='start_nav("room_{{r.id}}_3")'>
+                이정표 시작</button></td>
             </tr>
 
          </tr>
@@ -596,27 +607,23 @@ var acculNaviArr = [];
 // 3. arguments.length 4
 // > carnoArr_sign1, carnoArr_sign2, carnoArr_sign3, paths
 function updateNode() {
-
-    if(arguments.length == 2){
-      nodes.update({'id': 100, 'label': 'Sign 1', 'image': createImage(100, arguments[0],arguments[1])});
-
-    }else if(arguments.length == 3){
-      nodes.update({'id': 100, 'label': 'Sign 1', 'image': createImage(100, arguments[0],arguments[2])});
-      nodes.update({'id': 101, 'label': 'Sign 2', 'image': createImage(101, arguments[1],arguments[2])});
+    var clickedCarId = "";
+    if(arguments.length == 3){
+      clickedCarId = arguments[2];
+      nodes.update({'id': 100, 'label': 'Sign 1', 'image': createImage(100, arguments[0],arguments[1],clickedCarId)});
     }else if(arguments.length == 4){
-      nodes.update({'id': 100, 'label': 'Sign 1', 'image': createImage(100, arguments[0],arguments[3])});
-      nodes.update({'id': 101, 'label': 'Sign 2', 'image': createImage(101, arguments[1],arguments[3])});
-      nodes.update({'id': 102, 'label': 'Sign 3', 'image': createImage(102, arguments[2],arguments[3])});
+      clickedCarId = arguments[3];
+      nodes.update({'id': 100, 'label': 'Sign 1', 'image': createImage(100, arguments[0],arguments[2],clickedCarId)});
+      nodes.update({'id': 101, 'label': 'Sign 2', 'image': createImage(101, arguments[1],arguments[2],clickedCarId)});
+    }else if(arguments.length == 5){
+      clickedCarId = arguments[4];
+      nodes.update({'id': 100, 'label': 'Sign 1', 'image': createImage(100, arguments[0],arguments[3],clickedCarId)});
+      nodes.update({'id': 101, 'label': 'Sign 2', 'image': createImage(101, arguments[1],arguments[3],clickedCarId)});
+      nodes.update({'id': 102, 'label': 'Sign 3', 'image': createImage(102, arguments[2],arguments[3],clickedCarId)});
     }
     ns = nodes.getIds();
     var save_data = '';
-    for(var i=0; i< ns.length; i++) {
-        var item = nodes.get(ns[i]);
-        if(item.type == 'sign'){
-           save_data += "~"+item.id+"@"+item.image;
 
-        }
-   }
    var idVal = $("#chgInputOrder").val();
    if(idVal != ""){
      var lastChangedInputVal = $("#"+idVal).val();
@@ -693,7 +700,7 @@ var carnoArr_sign1 = [];
 var carnoArr_sign2 = [];
 var carnoArr_sign3 = [];
 var signalArr = [];
-function start_nav(roomId, idx) {
+function start_nav(roomId) {
 
   clickFlag = true;
   var idVal = $("#chgInputOrder").val();
@@ -704,59 +711,54 @@ function start_nav(roomId, idx) {
     checkCarno = $("#"+idVal).val();
     checkRoomId = idVal.split("_")[1];
     checkOrder = idVal.split("_")[2];
-    if(checkDupCarno(checkRoomId, checkCarno, checkOrder)){
+    /*if(checkDupCarno(checkRoomId, checkCarno, checkOrder)){
       alert("동일한 차번호가 존재합니다. 수정해주세요");
       return false;
-    }
+    }*/
   }
-  $("input[name^=room_"+roomId+"]").each(function(){
-
-    var order = $(this).attr("id").split("_")[2];
-    if($(this).val() != "" && !$(this).val() != undefined){
-    if(classificationMap(roomId) == 1){
-      if(window['carnoArr_sign'+classificationMap(roomId)].length < 3){
-          var isExist = (window['carnoArr_sign'+classificationMap(roomId)].indexOf(roomId+"_"+$(this).val()+"_"+order)!== -1);
-            if(!isExist){
-              window['carnoArr_sign'+classificationMap(roomId)].push(roomId+"_"+$(this).val()+"_"+order);
-            }
-      }else{
-          var isExist = (window['carnoArr_sign'+classificationMap(roomId)].indexOf(roomId+"_"+$(this).val()+"_"+order)!== -1);
-          if(!isExist){
-              window['carnoArr_sign'+classificationMap(roomId)].push(roomId+"_"+$(this).val()+"_"+order);
-          }
-          window['carnoArr_sign'+classificationMap(roomId)].shift();
+  //$("input[name^=room_"+roomId+"]").each(function(){
+    var roomObj = $("#"+roomId);
+    var order = roomObj.attr("id").split("_")[2];
+    var chkSign = roomObj.attr("id").split("_")[1];
+    //if($(this).val() != "" && !$(this).val() != undefined){
+    if(classificationMap(chkSign) == 1){
+      if(window['carnoArr_sign'+classificationMap(chkSign)].length < 101){
+          //var isExist = (window['carnoArr_sign'+classificationMap(chkSign)].indexOf(roomId)!== -1);
+          //  if(!isExist){
+              window['carnoArr_sign'+classificationMap(chkSign)].push(roomId);
+           // }
       }
     }else{
-       for(var j=classificationMap(roomId); j<classificationMap(roomId)+classificationMap(roomId); j++){
-        var idx = j-classificationMap(roomId)+1;
-        if(window['carnoArr_sign'+idx].length < 3){
-          var isExist = (window['carnoArr_sign'+idx].indexOf(roomId+"_"+$(this).val()+"_"+order)!== -1);
-            if(!isExist){
-              window['carnoArr_sign'+idx].push(roomId+"_"+$(this).val()+"_"+order);
-            }
-        }else{
+       for(var j=classificationMap(chkSign); j<classificationMap(chkSign)+classificationMap(chkSign); j++){
+        var idx = j-classificationMap(chkSign)+1;
+        if(window['carnoArr_sign'+idx].length < 100){
+          //var isExist = (window['carnoArr_sign'+idx].indexOf(roomId+"_"+$(this).val()+"_"+order)!== -1);
+           // if(!isExist){
+              window['carnoArr_sign'+idx].push(roomId);
+           // }
+        }/*else{
           var isExist = (window['carnoArr_sign'+idx].indexOf(roomId+"_"+$(this).val()+"_"+order)!== -1);
           if(!isExist){
               window['carnoArr_sign'+idx].push(roomId+"_"+$(this).val()+"_"+order);
           }
           window['carnoArr_sign'+idx].shift();
-        }
+        }*/
       }
     }
-  }
-  });
+  //}
+  //});
 
-  if(carnoArr_sign1.length <= 0 && carnoArr_sign2.length <= 0 && carnoArr_sign3.length <= 0) {
+  if(roomObj.val() == undefined || roomObj.val() == "") {
     alert("차량번호를 입력하세요");
     return false;
   }
 
-  if(roomId < 2){
-    updateNode(carnoArr_sign1, paths);
-  }else if(roomId > 1 && roomId < 4){
-    updateNode(carnoArr_sign1, carnoArr_sign2, paths);
+  if(chkSign < 2){
+    updateNode(carnoArr_sign1, paths, roomId);
+  }else if(chkSign > 1 && chkSign < 4){
+    updateNode(carnoArr_sign1, carnoArr_sign2, paths, roomId);
   }else{
-    updateNode(carnoArr_sign1, carnoArr_sign2, carnoArr_sign3, paths);
+    updateNode(carnoArr_sign1, carnoArr_sign2, carnoArr_sign3, paths, roomId);
   }
 
 
