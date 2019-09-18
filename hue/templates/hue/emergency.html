@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}- View {% endblock %}
+{% block content %}
+<div id="map" style="width:100%;height:400px;"></div>
+
+<script>
+var pos = [];
+{% for data in pos %}
+pos.push({'deviceUuid': '{{data.deviceUuid}}', 'deviceLng': '{{data.deviceLng}}', 'deviceLat': '{{data.deviceLat}}', 'deviceState': '{{data.deviceState}}', 'callDate': '{{data.callDate}}' });
+{% endfor %}
+pos.sort(function(a, b) {
+    a = new Date(a.callDate);
+    b = new Date(b.callDate);
+    return a>b ? -1 : a<b ? 1 : 0;
+});
+pos.sort((a,b) => (a.deviceUuid > b.deviceUuid) ? 1 : ((b.deviceUuid > a.deviceUuid) ? -1 : 0));
+var finalArray = getUniqueObjectArray(pos);
+var mapOptions = {
+    center: new naver.maps.LatLng(36.302726, 127.381359),
+    zoom: 8
+};
+
+var map = new naver.maps.Map('map', mapOptions);
+var markers = [],
+    infoWindows = [];
+var cnt = 0;
+var bounds = map.getBounds(),
+    southWest = bounds.getSW(),
+    northEast = bounds.getNE(),
+    lngSpan = northEast.lng() - southWest.lng(),
+    latSpan = northEast.lat() - southWest.lat();
+
+for (var key in finalArray) {
+    cnt++;
+    var position = new naver.maps.LatLng(
+        finalArray[key].deviceLat,
+        finalArray[key].deviceLng);
+
+    var marker = new naver.maps.Marker({
+        map: map,
+        position: position,
+        title: finalArray[key].deviceUuid,
+        zIndex: 100
+    });
+    console.log(marker);
+    var infoWindow = new naver.maps.InfoWindow({
+        content: '<div style="width:150px;text-align:center;padding:10px;">The Letter is <b>"'+ key.substr(0, 1) +'"</b>.</div>'
+    });
+    marker._nmarker_id = finalArray[key].deviceUuid;
+    markers.push(marker);
+    infoWindows.push(infoWindow);
+};
+
+
+function changePos(arr){
+  for(var i =0; i<markers.length; i++){
+   if(markers[i].title == 'I2'){
+     console.log(markers[i]);
+     console.log(markers[i].title);
+     var newPos = new naver.maps.LatLng(37.3814115, 127.09778831249402);
+     markers[i].setPosition(newPos);
+   }
+}
+}
+function getUniqueObjectArray(array) {
+  var tempArray = [];
+  var resultArray = [];
+  for(var i = 0; i < array.length; i++) {
+    var item = array[i]
+    if(tempArray.includes(item["deviceUuid"])) {
+      continue;
+    } else {
+      resultArray.push(item);
+      tempArray.push(item["deviceUuid"]);
+    }
+  }
+  return resultArray;
+}
+</script>
+{% endblock %}

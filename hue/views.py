@@ -2,11 +2,11 @@ import json
 import time
 from datetime import datetime, timedelta
 import serial
-from django.db.models import Q
+from django.db.models import Q, Max
 from django.http import HttpResponse
 from django.shortcuts import render
 
-from .models import Room, RoomPath, SignMappingData, RoomReservation, Nodes, Edges
+from .models import Room, RoomPath, SignMappingData, RoomReservation, Nodes, Edges, EmergencyPos
 
 
 # Create your views here.
@@ -33,25 +33,32 @@ def navi_list(request):
         svgs = SignMappingData.objects.all()
         return render(request, 'hue/navi.html', {'rooms': rooms, 'paths': paths, 'reserves': reserves, 'svgs': svgs, 'nodes':nodes, 'edges':edges})
 
+def emergency(request):
+    if not request.user.is_authenticated:
+        return render(request, 'hue/login.html',{})
+    else:
+        pos = EmergencyPos.objects.all().order_by('-callDate')
+        return render(request, 'hue/emergency.html', {'pos':pos})
+
 def signal(request):
     port = 'COM4'  # 시리얼 포트
     baud = 115200  # 시리얼 보드레이트(통신속도)
     data = request.POST.getlist('signalData[]')
     #print('Transfer Data::%s', data)
-    ser = serial.Serial(port, baud)
-    for item in data:
-        #if ser.in_waiting == 1:
-        text = item+'\n'
-        for char in list(text):
-        #print(text.encode('ascii'))
-        #ser.name()
-            ser.write(char.encode('ascii'))
-            time.sleep(0.1)
-        result = ser.readline()
-        print(result)
-        time.sleep(0.1)
-    ser.flush()
-    ser.close()
+    # ser = serial.Serial(port, baud)
+    # for item in data:
+    #     #if ser.in_waiting == 1:
+    #     text = item+'\n'
+    #     for char in list(text):
+    #     #print(text.encode('ascii'))
+    #     #ser.name()
+    #         ser.write(char.encode('ascii'))
+    #         time.sleep(0.1)
+    #     result = ser.readline()
+    #     print(result)
+    #     time.sleep(0.1)
+    # ser.flush()
+    # ser.close()
 
     return HttpResponse(json.dumps({'result': data}), content_type="application/json")
 

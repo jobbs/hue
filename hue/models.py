@@ -129,3 +129,9 @@ class Edges(models.Model):
     toseqid = models.IntegerField(default=None, blank=False, null=False)
     arrows = models.CharField(max_length=5, blank=False, null=False)
 
+class EmergencyPos(models.Model):
+    deviceUuid = models.CharField(max_length=100, blank=False, null=False)
+    deviceLng = models.FloatField(default=None, blank=False, null=False)
+    deviceLat = models.FloatField(default=None, blank=False, null=False)
+    deviceState = models.CharField(max_length=2, blank=False, null=False)
+    callDate = models.DateTimeField(auto_now_add=True)
