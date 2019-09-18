@@ -95,6 +95,9 @@ def svg(request):
 
     return HttpResponse(json.dumps({'result': 'ok'}), content_type="application/json")
 
+def emergency_data(request):
+    emergencyData = request.POST['data']
+    return HttpResponse()
 
 #
 '''
