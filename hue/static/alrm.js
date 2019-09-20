@@ -1,5 +1,5 @@
 var alrmFlag;
-function doCheckAlrm() {
+function doCheckAlrm(token) {
 	try {
 		alrmFlag =  $.cookie("alrmFlag");
 		if (alrmFlag!=null || alrmFlag == 'false') {
@@ -10,13 +10,11 @@ function doCheckAlrm() {
 			return;
 		}
 		var url = '/emergency/call';
-
 		$.ajax({
-			type: "get",
+			type: "POST",
 			url : url,
-			beforeSend : function(x, s) {
-				x.url = url;
-			},
+			data: {'data':{},'csrfmiddlewaretoken': tokens},
+			dataType: "json",
 			success : function(response) {
 
 				if( result.success ) {

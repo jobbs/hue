@@ -46,7 +46,7 @@ def emergency(request):
 
 def period_call_emergency_resp(request):
         pos = EmergencyPos.objects.all().order_by('-callDate')
-        return HttpResponse(json.dumps({'result': pos}), content_type="application/json")
+        return HttpResponse({'result': pos}, content_type="application/json")
 
 
 def signal(request):
