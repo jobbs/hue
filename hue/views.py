@@ -11,7 +11,8 @@ from .models import Room, RoomPath, SignMappingData, RoomReservation, Nodes, Edg
 
 # Create your views here.
 def login(request):
-    return render(request, 'hue/login.html',{})
+    return render(request, 'hue/login.html', {})
+
 
 def room_list(request):
     rooms = Room.objects.all()
@@ -21,7 +22,7 @@ def room_list(request):
 
 def navi_list(request):
     if not request.user.is_authenticated:
-        return render(request, 'hue/login.html',{})
+        return render(request, 'hue/login.html', {})
     else:
         time_threshold = datetime.now() - timedelta(minutes=30)
         rooms = Room.objects.all()
@@ -31,20 +32,28 @@ def navi_list(request):
         RoomReservation.objects.filter(reserveDate__lt=time_threshold).delete()
         reserves = RoomReservation.objects.all().order_by('reserveDate')
         svgs = SignMappingData.objects.all()
-        return render(request, 'hue/navi.html', {'rooms': rooms, 'paths': paths, 'reserves': reserves, 'svgs': svgs, 'nodes':nodes, 'edges':edges})
+        return render(request, 'hue/navi.html',
+                      {'rooms': rooms, 'paths': paths, 'reserves': reserves, 'svgs': svgs, 'nodes': nodes,
+                       'edges': edges})
+
 
 def emergency(request):
     if not request.user.is_authenticated:
-        return render(request, 'hue/login.html',{})
+        return render(request, 'hue/login.html', {})
     else:
         pos = EmergencyPos.objects.all().order_by('-callDate')
-        return render(request, 'hue/emergency.html', {'pos':pos})
+        return render(request, 'hue/emergency.html', {'pos': pos})
+
+def period_call_emergency_resp(request):
+        pos = EmergencyPos.objects.all().order_by('-callDate')
+        return HttpResponse(json.dumps({'result': pos}), content_type="application/json")
+
 
 def signal(request):
     port = 'COM4'  # 시리얼 포트
     baud = 115200  # 시리얼 보드레이트(통신속도)
     data = request.POST.getlist('signalData[]')
-    #print('Transfer Data::%s', data)
+    # print('Transfer Data::%s', data)
     # ser = serial.Serial(port, baud)
     # for item in data:
     #     #if ser.in_waiting == 1:
@@ -61,6 +70,7 @@ def signal(request):
     # ser.close()
 
     return HttpResponse(json.dumps({'result': data}), content_type="application/json")
+
 
 def reservation(request):
     reserve_data = request.POST['reserve_data']
@@ -79,6 +89,7 @@ def reservation(request):
 
     return HttpResponse(json.dumps({'reserveDate': now.isoformat()}), content_type="application/json")
 
+
 def svg(request):
     svg_mapping_data = request.POST['save_data']
     svg_mapping_data = svg_mapping_data.split('~')
@@ -95,9 +106,15 @@ def svg(request):
 
     return HttpResponse(json.dumps({'result': 'ok'}), content_type="application/json")
 
+
 def emergency_data(request):
-    emergencyData = request.POST['data']
-    return HttpResponse()
+    emergency_resp: object = request.POST['data']
+    recieved_json_data = json.loads(emergency_resp)
+    savedata = EmergencyPos(deviceUuid=recieved_json_data['deviceUuid'], deviceLng=recieved_json_data['deviceLng'],
+                            deviceLat=recieved_json_data['deviceLat'], deviceState=recieved_json_data['deviceState'])
+    savedata.save()
+    return HttpResponse(json.dumps({'result': 'ok'}), content_type="application/json")
+
 
 #
 '''
