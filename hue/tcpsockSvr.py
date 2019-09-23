@@ -20,7 +20,6 @@ def handle_client_connection(client_socket):
     request = client_socket.recv(1024)
     print('Received {}'.format(request))
     request = json.loads(request)
-    print(request["deviceUuid"])
     c.execute("INSERT INTO hue_emergencypos(deviceUuid,deviceLng,deviceLat,deviceState,callDate) VALUES ('"+str(request["deviceUuid"])+"',"+str(request["deviceLng"])+","+str(request["deviceLat"])+","+str(request["deviceState"])+", datetime('now','localtime'))")
     conn.commit()
     conn.close()
