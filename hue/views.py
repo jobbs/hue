@@ -5,7 +5,8 @@ import serial
 from django.db.models import Q, Max
 from django.http import HttpResponse
 from django.shortcuts import render
-
+from django.http import JsonResponse
+from django.core import serializers
 from .models import Room, RoomPath, SignMappingData, RoomReservation, Nodes, Edges, EmergencyPos
 
 
@@ -46,7 +47,8 @@ def emergency(request):
 
 def period_call_emergency_resp(request):
         pos = EmergencyPos.objects.all().order_by('-callDate')
-        return HttpResponse({'result': pos}, content_type="application/json")
+        posts_serialized = serializers.serialize('json', pos)
+        return JsonResponse(posts_serialized, safe=False)
 
 
 def signal(request):

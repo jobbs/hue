@@ -1,5 +1,5 @@
 var alrmFlag;
-function doCheckAlrm(token) {
+function doCheckAlrm() {
 	try {
 		alrmFlag =  $.cookie("alrmFlag");
 		if (alrmFlag!=null || alrmFlag == 'false') {
@@ -16,11 +16,13 @@ function doCheckAlrm(token) {
 			data: {'data':{},'csrfmiddlewaretoken': tokens},
 			dataType: "json",
 			success : function(response) {
-
-				if( result.success ) {
-
+                    response = eval(response);
 					var cookieTime = $.cookie("alrmCookie");
-                    var temp = response.result.sort();
+					var temp = new Array();
+					for(var idx=0; idx <response.length; idx++){
+					  temp.push(response[idx].fields);
+					}
+                    temp = temp.sort();
                     temp.sort(function(a, b) {
                                 a = new Date(a.callDate);
                                 b = new Date(b.callDate);
@@ -33,21 +35,22 @@ function doCheckAlrm(token) {
 
 						for( var i=0; i < periodResultArray.length; i++ ) {
 							alrm = periodResultArray[i];
-							if( (cookieTime == undefined || cookieTime < alrm.callDate) && alrm.deviceState == '1') {
+							var dttm = new Date(alrm.callDate).getTime();
+							if( (cookieTime == undefined || cookieTime < dttm) && alrm.deviceState == 1) {
 								$("#alertsDiv").append(
-										'<a href="#" class="alert alert-red" role="alert"><i class="fa fa-volume-up aqua"></i> ' + alrm.deviceUuid + ' 긴급발생</a>'
+										'<a href="#" class="alert alert-red" role="alert">*디바이스ID \"' + alrm.deviceUuid + '\" 긴급상황발생</a>'
 									);
 							}
 
 							if( i == 5 ) break;
-						}
+
 
 					}
 				}
 
 				$("#alertsDiv > a").each(function() {
 					var $this = $(this);
-					$(this).fadeOut(3000, "linear", function() {
+					$(this).fadeOut(15000, "linear", function() {
 						$this.remove();
 					});
 				});
@@ -62,7 +65,7 @@ function doCheckAlrm(token) {
 }
 
 doCheckAlrm();
-var _timer = setInterval(doCheckAlrm, (30*1000));
+var _timer = setInterval(doCheckAlrm, (5*1000));
 
 function getUniqueObjectArray(array) {
   var tempArray = [];
