@@ -4,9 +4,11 @@ from datetime import datetime, timedelta
 import serial
 from django.db.models import Q, Max
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.core import serializers
+from django.views.decorators.csrf import csrf_exempt
+
 from .models import Room, RoomPath, SignMappingData, RoomReservation, Nodes, Edges, EmergencyPos
 
 
@@ -108,9 +110,11 @@ def svg(request):
 
     return HttpResponse(json.dumps({'result': 'ok'}), content_type="application/json")
 
-
+@csrf_exempt
 def emergency_data(request):
-    emergency_resp: object = request.POST['data']
+    print(request.__dict__)
+    emergency_resp: object = get_object_or_404(request.POST,id=request.POST.get('data'))
+    print(emergency_resp)
     recieved_json_data = json.loads(emergency_resp)
     savedata = EmergencyPos(deviceUuid=recieved_json_data['deviceUuid'], deviceLng=recieved_json_data['deviceLng'],
                             deviceLat=recieved_json_data['deviceLat'], deviceState=recieved_json_data['deviceState'])
