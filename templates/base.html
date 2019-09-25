@@ -2,29 +2,50 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<link rel="stylesheet" href="/static/bootstrap/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<link rel="stylesheet" href="/static/bootstrap/bootstrap.min.css">
 <style>
     .bg-light {
       background-color:#fff!important;
     }
+    .alerts.top-right {
+    top: 35px;
+    right: 20px;
+    }
 
+    .alerts {
+    position: absolute;
+    z-index: 1030;
+    width: 300px;
+    margin-bottom: 10px;
+    }
+
+    .alerts .alert-red {color: #a94442; background-color: #f2dede; border-color: #ebccd1;}
 </style>
-<script
-  src="/static/jquery/jquery-3.4.1.min.js"
-  integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
-  crossorigin="anonymous"></script><script src="/static/jquery/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-<script src="/static/bootstrap/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script src="/static/jquery/jquery-3.4.1.min.js"></script>
+<script src="/static/jquery/popper.min.js" ></script>
+<script src="/static/bootstrap/bootstrap.min.js"></script>
+<script src="/static/jquery.cookie.js"></script>
 
+
+ <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=qtrx6xyjgf"></script>
+<script>
+tokens = '{{ csrf_token }}';
+
+</script>
+<script src="/static/alrm.js"></script>
 <title>Hue 休 {% block title%}{% endblock %}</title>
 </head>
 <body>
+<div class="alerts top-right" id="alertsDiv"></div>
 <div class="container">
     <header class="header clearfix" style="background-color:#fff">
-        <nav class="navbar navbar-expand-lg navbar-light bg-light" >
-            <a class="navbar-brand" href="/">Hue 休</a>
+        <nav class="navbar navbar-expand-lg navbar-light primary-color" >
+            <a class="navbar-brand" href="/navi">Hue 休</a>
             <ul class="nav">
                 {% if user.is_authenticated %}
                 <li class="nav-item"><a href="#" class="nav-link">{{user.first_name}}님 환영합니다.</a></li>
+                <li class="nav-item"><a href="/navi" class="nav-link">이정표시스템</a></li>
+                <li class="nav-item"><a href="/emergency" class="nav-link">응급구조시스템</a></li>
                 <li class="nav-item"><a href="/logout" class="nav-link">로그아웃</a></li>
                 {% else %}
                 <li class="nav-item"><a href="/login" class="nav-link">로그인</a></li>
