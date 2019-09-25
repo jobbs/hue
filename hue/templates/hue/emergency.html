@@ -14,20 +14,16 @@
         <div id="map" style="width:100%;height:550px; border-color:gray"></div>
       </div>
     </div>
-    <div class="row">
+    <div class="row" style="margin-top:10px;">
         <div class="col-xl-12">
-        <p>디바이스 위치정보</p>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-xl-12">
-        <p>위도:<input type="text" readonly="readonly" id="viewLat"/>경도:<input type="text" readonly="readonly" id="viewLng"/></p>
+        <p>디바이스 위치정보 > 위도:<input type="text" readonly="readonly" id="viewLat"/> 경도:<input type="text" readonly="readonly" id="viewLng"/></p>
         </div>
     </div>
 </div>
 <script>
 var defaultUrl = "/static/images/location1.png";
 var emergencyUrl = "/static/images/map-marker1.png";
+var alrmUuid = "{{alrmUuid}}";
 var pos = [];
 {% for data in pos %}
 pos.push({'deviceUuid': '{{data.deviceUuid}}', 'deviceLng': '{{data.deviceLng}}', 'deviceLat': '{{data.deviceLat}}', 'deviceState': '{{data.deviceState}}', 'callDate': '{{data.callDate}}' });
@@ -40,8 +36,8 @@ pos.sort(function(a, b) {
 pos.sort((a,b) => (a.deviceUuid > b.deviceUuid) ? 1 : ((b.deviceUuid > a.deviceUuid) ? -1 : 0));
 var finalArray = getUniqueObjectArray(pos);
 var mapOptions = {
-    center: new naver.maps.LatLng(36.302726, 127.381359),
-    zoom: 10
+    center: new naver.maps.LatLng(36.299276, 127.489287),
+    zoom: 9
 };
 
 var map = new naver.maps.Map('map', mapOptions);
@@ -89,15 +85,27 @@ for (var key in finalArray) {
     if(cnt == finalArray.length){
       map.setCenter(position);
     }
+
 };
 
+$(document).ready(function(){
+    if(alrmUuid != ""){
+      for(var i = 0; i<markers.length; i++){
+          if(alrmUuid == markers[i]._nmarker_id){
+            markers[i].trigger("click");
+          }
+      }
+    }
+});
 
 function changePos(){
 
 $.ajax({
-    type: "POST", // 데이터를 전송하는 방법을 지정
+    type: "GET", // 데이터를 전송하는 방법을 지정
     url: "/emergency/call", // 통신할 url을 지정
-    data: {'data': {}, 'csrfmiddlewaretoken': '{{ csrf_token }}'}, // 서버로 데이터 전송시 옵션
+    headers: {
+			  "X-CSRFToken": '{{ csrf_token }}'
+			},
     dataType: "json", // 서버측에서 전송한 데이터를 어떤 형식의 데이터로서 해석할 것인가를 지정, 없으면 알아서 판단
     // 서버측에서 전송한 Response 데이터 형식 (json)
     success: function(response){ // 통신 성공시
@@ -144,9 +152,9 @@ $.ajax({
                  }
                }
            }// end j for
-           if((i+1) == markers.length){
+           /*if((i+1) == markers.length){
              map.setCenter(centerPos);
-           }
+           }*/
         }// end i for
        newMarker = cloneArray.filter(function(val) {
                       return removelist.indexOf(val) == -1;
@@ -168,6 +176,7 @@ $.ajax({
                     content:  '<div style="width:150px;text-align:center;padding:10px; border-color:red; color:red;">경보발생! <br/>디바이스UUID: <b>"'+ newMarker[i].deviceUuid +'"</b></div>'
                 });
                 infoWindow["uuid"] = "info_"+newMarker[i].deviceUuid;
+
             }else{
                 iconJson["url"] = defaultUrl;
                 iconJson["size"] = new naver.maps.Size(41,41);
@@ -188,8 +197,13 @@ $.ajax({
             marker._nmarker_id = newMarker[i].deviceUuid;
             markers.push(marker);
             naver.maps.Event.addListener(marker, 'click', getClickHandler(markers.length-1));
-
+            if(newMarker[i].deviceState == 1 ){
+              infoWindow.open(map, marker);
+            }
             infoWindows.push(infoWindow);
+            if((i+1) == markers.length){
+             map.setCenter(position);
+           }
           }
 
        }
@@ -223,7 +237,8 @@ function getClickHandler(seq) {
 
 for (var i=0, ii=markers.length; i<ii; i++) {
     naver.maps.Event.addListener(markers[i], 'click', getClickHandler(i));
+    naver.maps.Event.addListener(markers[i], 'mouseover', getClickHandler(i));
 }
-setInterval(changePos,1000*5);
+setInterval(changePos,1000*3);
 </script>
 {% endblock %}

@@ -47,11 +47,17 @@ def emergency(request):
         pos = EmergencyPos.objects.all().order_by('-callDate')
         return render(request, 'hue/emergency.html', {'pos': pos})
 
-def period_call_emergency_resp(request):
+def emergency_with_params(request, alrm_uuid):
+    if not request.user.is_authenticated:
+        return render(request, 'hue/login.html', {})
+    else:
         pos = EmergencyPos.objects.all().order_by('-callDate')
-        posts_serialized = serializers.serialize('json', pos)
-        return JsonResponse(posts_serialized, safe=False)
+        return render(request, 'hue/emergency.html', {'pos': pos, 'alrmUuid': alrm_uuid})
 
+def period_call_emergency_resp(request):
+    pos = EmergencyPos.objects.all().order_by('-callDate')
+    posts_serialized = serializers.serialize('json', pos)
+    return JsonResponse(posts_serialized, safe=False)
 
 def signal(request):
     port = 'COM4'  # 시리얼 포트
@@ -110,10 +116,11 @@ def svg(request):
 
     return HttpResponse(json.dumps({'result': 'ok'}), content_type="application/json")
 
+
 @csrf_exempt
 def emergency_data(request):
     print(request.__dict__)
-    emergency_resp: object = get_object_or_404(request.POST,id=request.POST.get('data'))
+    emergency_resp: object = get_object_or_404(request.POST, id=request.POST.get('data'))
     print(emergency_resp)
     recieved_json_data = json.loads(emergency_resp)
     savedata = EmergencyPos(deviceUuid=recieved_json_data['deviceUuid'], deviceLng=recieved_json_data['deviceLng'],

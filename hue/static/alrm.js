@@ -11,9 +11,11 @@ function doCheckAlrm() {
 		}
 		var url = '/emergency/call';
 		$.ajax({
-			type: "POST",
+			type: "GET",
 			url : url,
-			data: {'data':{},'csrfmiddlewaretoken': tokens},
+			headers: {
+			  "X-CSRFToken": tokens
+			},
 			dataType: "json",
 			success : function(response) {
                     response = eval(response);
@@ -38,7 +40,7 @@ function doCheckAlrm() {
 							var dttm = new Date(alrm.callDate).getTime();
 							if( (cookieTime == undefined || cookieTime < dttm) && alrm.deviceState == 1) {
 								$("#alertsDiv").append(
-										'<a href="#" class="alert alert-red" role="alert">*디바이스ID \"' + alrm.deviceUuid + '\" 긴급상황발생</a>'
+										'<a href="/emergency/'+alrm.deviceUuid+'" class="alert alert-red" role="alert">*디바이스ID \"' + alrm.deviceUuid + '\" 긴급상황발생</a>'
 									);
 							}
 
@@ -63,10 +65,10 @@ function doCheckAlrm() {
 		console.log( "Check Alram Error " + err );
 	}
 }
-
+if(window.location.pathname != "/"){
 doCheckAlrm();
-var _timer = setInterval(doCheckAlrm, (5*1000));
-
+var _timer = setInterval(doCheckAlrm, (3*1000));
+}
 function getUniqueObjectArray(array) {
   var tempArray = [];
   var resultArray = [];

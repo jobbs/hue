@@ -1,6 +1,5 @@
 import socket
 import threading
-import requests
 import json
 import sqlite3
 bind_ip = '0.0.0.0'
@@ -23,8 +22,6 @@ def handle_client_connection(client_socket):
     c.execute("INSERT INTO hue_emergencypos(deviceUuid,deviceLng,deviceLat,deviceState,callDate) VALUES ('"+str(request["deviceUuid"])+"',"+str(request["deviceLng"])+","+str(request["deviceLat"])+","+str(request["deviceState"])+", datetime('now','localtime'))")
     conn.commit()
     conn.close()
-    #resp = requests.post(API_HOST, headers=headers, json=request)
-    #print(resp)
 
 while True:
     client_sock, address = server.accept()
