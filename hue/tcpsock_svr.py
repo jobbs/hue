@@ -22,6 +22,7 @@ def handle_client_connection(client_socket):
     c.execute("INSERT INTO hue_emergencypos(deviceUuid,deviceLng,deviceLat,deviceState,callDate) VALUES ('"+str(request["deviceUuid"])+"',"+str(request["deviceLng"])+","+str(request["deviceLat"])+","+str(request["deviceState"])+", datetime('now','localtime'))")
     conn.commit()
     conn.close()
+    client_socket.close()
 
 while True:
     client_sock, address = server.accept()

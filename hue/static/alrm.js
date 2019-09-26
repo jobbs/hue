@@ -52,7 +52,7 @@ function doCheckAlrm() {
 
 				$("#alertsDiv > a").each(function() {
 					var $this = $(this);
-					$(this).fadeOut(15000, "linear", function() {
+					$(this).fadeOut(10000, "linear", function() {
 						$this.remove();
 					});
 				});
@@ -65,7 +65,7 @@ function doCheckAlrm() {
 		console.log( "Check Alram Error " + err );
 	}
 }
-if(window.location.pathname != "/"){
+if(window.location.pathname != "/" && window.location.pathname != "/login" ){
 doCheckAlrm();
 var _timer = setInterval(doCheckAlrm, (3*1000));
 }

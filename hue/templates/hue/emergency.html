@@ -92,7 +92,9 @@ $(document).ready(function(){
     if(alrmUuid != ""){
       for(var i = 0; i<markers.length; i++){
           if(alrmUuid == markers[i]._nmarker_id){
+            map.setCenter(markers[i].getPosition());
             markers[i].trigger("click");
+
           }
       }
     }
