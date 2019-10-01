@@ -40,7 +40,7 @@ function doCheckAlrm() {
 							var dttm = new Date(alrm.callDate).getTime();
 							if( (cookieTime == undefined || cookieTime < dttm) && alrm.deviceState == 1) {
 								$("#alertsDiv").append(
-										'<a href="/emergency/'+alrm.deviceUuid+'" class="alert alert-red" role="alert">*디바이스ID \"' + alrm.deviceUuid + '\" 긴급상황발생</a>'
+										'<div style="padding-bottom:50px;"><a href="/emergency/'+alrm.deviceUuid+'" class="alert alert-red" role="alert">*디바이스ID \"' + alrm.deviceUuid + '\" 긴급상황발생</a></div>'
 									);
 							}
 
@@ -50,7 +50,7 @@ function doCheckAlrm() {
 					}
 				}
 
-				$("#alertsDiv > a").each(function() {
+				$("#alertsDiv > div > a").each(function() {
 					var $this = $(this);
 					$(this).fadeOut(10000, "linear", function() {
 						$this.remove();
@@ -65,7 +65,8 @@ function doCheckAlrm() {
 		console.log( "Check Alram Error " + err );
 	}
 }
-if(window.location.pathname != "/" && window.location.pathname != "/login" ){
+
+if(window.location.pathname != "/" && window.location.pathname != "/login/" ){
 doCheckAlrm();
 var _timer = setInterval(doCheckAlrm, (3*1000));
 }
