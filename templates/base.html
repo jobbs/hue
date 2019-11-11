@@ -40,7 +40,7 @@ tokens = '{{ csrf_token }}';
 <title>Hue 休 {% block title%}{% endblock %}</title>
 </head>
 <body>
-<div class="alerts top-right" id="alertsDiv"></div>
+<div class="alerts top-right" id="alertsDiv"></div> 
 <div class="container">
     <header class="header clearfix" style="background-color:#fff">
         <nav class="navbar navbar-expand-lg navbar-light primary-color" >
@@ -50,6 +50,7 @@ tokens = '{{ csrf_token }}';
                 <li class="nav-item"><a href="#" class="nav-link">{{user.first_name}}님 환영합니다.</a></li>
                 <li class="nav-item"><a href="/navi" class="nav-link">이정표시스템</a></li>
                 <li class="nav-item"><a href="/emergency" class="nav-link">응급구조시스템</a></li>
+                <li class="nav-item"><a href="/temphumpm" class="nav-link">환경정보시스템</a></li>
                 <li class="nav-item"><a href="/logout" class="nav-link">로그아웃</a></li>
                 {% else %}
                 <!--<li class="nav-item"><a href="/login" class="nav-link">로그인</a></li>-->
