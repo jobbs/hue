@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% block title %}- View {% endblock %}
+{% block content %}
+<style>
+
+    #map{
+    border-radius: 25px;
+    border: 2px solid #73AD21;
+    }
+
+    .alerts {
+    position: absolute;
+    z-index: 1030;
+    width: 300px;
+    margin-bottom: 10px;
+    }
+    .alert {
+    margin-top: 15px;
+    margin-bottom: 15px;
+    }
+</style>
+<div class="container">
+    <div class="row">
+      <div class="col-xl-12">
+        <div id="map" style="width:100%;height:550px; border-color:gray"></div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px;">
+        <div class="col-xl-12">
+        <p>디바이스 위치정보 > 위도:<input type="text" readonly="readonly" id="viewLat"/> 경도:<input type="text" readonly="readonly" id="viewLng"/></p>
+        </div>
+        <div class="col-xl-12">
+        <p>디바이스 환경정보 > 온도:<input type="text" readonly="readonly" id="viewTempature"/>℃ 습도:<input type="text" readonly="readonly" id="viewHum"/>% 미세먼지(2.5):<input type="text" readonly="readonly" id="viewPm"/></p>
+        </div>
+    </div>
+</div>
+<script>
+var defaultUrl = "/static/images/location1.png";
+var temp = [];
+{% for data in temp %}
+temp.push({'deviceUuid': '{{data.deviceUuid}}', 'deviceLng': '{{data.deviceLng}}', 'deviceLat': '{{data.deviceLat}}', 'deviceTempature': '{{data.deviceTempature}}', 'deviceHum': '{{data.deviceHum}}', 'devicePm': '{{data.devicePm}}', 'callDate': '{{data.callDate}}' });
+{% endfor %}
+temp.sort(function(a, b) {
+    a = new Date(a.callDate);
+    b = new Date(b.callDate);
+    return a>b ? -1 : a<b ? 1 : 0;
+});
+temp.sort((a,b) => (a.deviceUuid > b.deviceUuid) ? 1 : ((b.deviceUuid > a.deviceUuid) ? -1 : 0));
+var finalArray = getUniqueObjectArray(temp);
+var mapOptions = {
+    center: new naver.maps.LatLng(36.299276, 127.489287),
+    zoom: 9
+};
+
+var map = new naver.maps.Map('map', mapOptions);
+var markers = [],
+    infoWindows = [];
+var cnt = 0;
+
+for (var key in finalArray) {
+    cnt++;
+    var position = new naver.maps.LatLng(
+        finalArray[key].deviceLat,
+        finalArray[key].deviceLng);
+    var iconJson = new Object();
+    var infoWindow;
+        iconJson["url"] = defaultUrl;
+        iconJson["size"] = new naver.maps.Size(41,41);
+        iconJson["anchor"] =  new naver.maps.Point(25,25);
+        iconJson["origin"] = new naver.maps.Point(0,0);
+        infoWindow = new naver.maps.InfoWindow({
+            content: '<div style="width:150px;text-align:center;padding:10px;">디바이스UUID: <b>"'+ finalArray[key].deviceUuid +'"</b><br/>온도: <b>"'+ finalArray[key].deviceTempature +'"</b><br/>습도: <b>"'+ finalArray[key].deviceHum +'"</b><br/>미세먼지(2.5): <b>"'+ finalArray[key].devicePm +'"</b></div>'
+        });
+        infoWindow["uuid"] = "info_"+finalArray[key].deviceUuid;
+
+    var marker = new naver.maps.Marker({
+        map: map,
+        position: position,
+        title: finalArray[key].deviceUuid,
+        icon: iconJson,
+        zIndex: 100
+    });
+    marker._nmarker_id = finalArray[key].deviceUuid;
+    marker["tempature"] = finalArray[key].deviceTempature;
+    marker["hum"] = finalArray[key].deviceHum;
+    marker["pm"] = finalArray[key].devicePm;
+    markers.push(marker);
+    infoWindows.push(infoWindow);
+    iconJson = null;
+    if(cnt == finalArray.length){
+      map.setCenter(position);
+    }
+
+};
+
+$(document).ready(function(){
+
+});
+
+function changeTemp(){
+
+$.ajax({
+    type: "GET", // 데이터를 전송하는 방법을 지정
+    url: "/temphumpm/call", // 통신할 url을 지정
+    headers: {
+			  "X-CSRFToken": '{{ csrf_token }}'
+			},
+    dataType: "json", // 서버측에서 전송한 데이터를 어떤 형식의 데이터로서 해석할 것인가를 지정, 없으면 알아서 판단
+    // 서버측에서 전송한 Response 데이터 형식 (json)
+    success: function(response){ // 통신 성공시
+       response = eval(response);
+       var temp = new Array();
+       for(var idx=0; idx <response.length; idx++){
+         temp.push(response[idx].fields);
+       }
+       temp = temp.sort();
+       temp.sort(function(a, b) {
+                   a = new Date(a.callDate);
+                   b = new Date(b.callDate);
+                   return a>b ? -1 : a<b ? 1 : 0;
+       });
+       temp.sort((a,b) => (a.deviceUuid > b.deviceUuid) ? 1 : ((b.deviceUuid > a.deviceUuid) ? -1 : 0));
+       var periodResultArray = getUniqueObjectArray(temp);
+       var centerPos;
+       var newMarker = new Array();
+       var cloneArray = periodResultArray;
+       var removelist = new Array();
+       for(var i =0; i<markers.length; i++){
+           for(var j=0; j< periodResultArray.length; j++){
+               if(markers[i].title == periodResultArray[j].deviceUuid){
+                 removelist.push(periodResultArray[j]);
+                 var newPos = new naver.maps.LatLng(periodResultArray[j].deviceLat, periodResultArray[j].deviceLng);
+                 centerPos = newPos;
+                 markers[i].setPosition(newPos);
+                 markers[i].setIcon({
+                   url: defaultUrl,
+                   size: new naver.maps.Size(41,41),
+                   anchor: new naver.maps.Point(25,25)
+                 });
+                 infoWindows[i].setContent('<div style="width:150px;text-align:center;padding:10px;">디바이스UUID: <b>"'+ periodResultArray[j].deviceUuid +'"</b><br/>온도: <b>"'+ periodResultArray[j].deviceTempature +'"</b><br/>습도: <b>"'+ periodResultArray[j].deviceHum +'"</b><br/>미세먼지(2.5): <b>"'+ periodResultArray[j].devicePm +'"</b></div>');
+               }
+           }// end j for
+           /*if((i+1) == markers.length){
+             map.setCenter(centerPos);
+           }*/
+        }// end i for
+       newMarker = cloneArray.filter(function(val) {
+                      return removelist.indexOf(val) == -1;
+                    });
+       if(newMarker.length > 0){
+          for(var i=0; i<newMarker.length; i++){
+            var position = new naver.maps.LatLng(
+            newMarker[i].deviceLat,
+            newMarker[i].deviceLng);
+            var iconJson = new Object();
+            var infoWindow;
+                iconJson["url"] = defaultUrl;
+                iconJson["size"] = new naver.maps.Size(41,41);
+                iconJson["anchor"] =  new naver.maps.Point(25,25);
+                iconJson["origin"] = new naver.maps.Point(0,0);
+                infoWindow = new naver.maps.InfoWindow({
+                    content: '<div style="width:150px;text-align:center;padding:10px;">디바이스UUID: <b>"'+ newMarker[i].deviceUuid +'"</b><br/>온도: <b>"'+ newMarker[i].deviceTemp +'"</b><br/>습도: <b>"'+ newMarker[i].deviceHum +'"</b><br/>미세먼지(2.5): <b>"'+ newMarker[i].devicePm +'"</b></div>'
+                });
+                infoWindow["uuid"] = "info_"+newMarker[i].deviceUuid;
+
+            var marker = new naver.maps.Marker({
+                map: map,
+                position: position,
+                title: newMarker[i].deviceUuid,
+                icon: iconJson,
+                zIndex: 100
+            });
+            marker._nmarker_id = newMarker[i].deviceUuid;
+            marker["tempature"] = newMarker[i].deviceTempature;
+            marker["hum"] = newMarker[i].deviceHum;
+            marker["pm"] = newMarker[i].devicePm;
+            markers.push(marker);
+            naver.maps.Event.addListener(marker, 'click', getClickHandler(markers.length-1));
+            infoWindows.push(infoWindow);
+            if((i+1) == markers.length){
+             map.setCenter(position);
+           }
+          }
+
+       }
+    },
+    error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+
+    }
+  });
+}
+function uniqueArray(arrArg) {
+  return arrArg.filter(function(elem, pos,arr) {
+    return arr.indexOf(elem) == pos;
+  });
+};
+
+function getClickHandler(seq) {
+    return function(e) {
+        var marker = markers[seq],
+            infoWindow = infoWindows[seq];
+
+        if (infoWindow.getMap()) {
+            infoWindow.close();
+        } else {
+            infoWindow.open(map, marker);
+            $("#viewLat").val(marker.getPosition()._lat);
+            $("#viewLng").val(marker.getPosition()._lng);
+            $("#viewTempature").val(marker["tempature"]);
+            $("#viewHum").val(marker["hum"]);
+            $("#viewPm").val(marker["pm"]);
+
+        }
+    }
+}
+
+for (var i=0, ii=markers.length; i<ii; i++) {
+    naver.maps.Event.addListener(markers[i], 'click', getClickHandler(i));
+    naver.maps.Event.addListener(markers[i], 'mouseover', getClickHandler(i));
+}
+setInterval(changeTemp,1000*3);
+</script>
+{% endblock %}

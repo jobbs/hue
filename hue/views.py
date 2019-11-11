@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import Room, RoomPath, SignMappingData, RoomReservation, Nodes, Edges, EmergencyPos
+from .models import Room, RoomPath, SignMappingData, RoomReservation, Nodes, Edges, EmergencyPos, TempHumPm
 
 
 # Create your views here.
@@ -56,6 +56,18 @@ def emergency_with_params(request, alrm_uuid):
 
 def period_call_emergency_resp(request):
     pos = EmergencyPos.objects.all().order_by('-callDate')
+    posts_serialized = serializers.serialize('json', pos)
+    return JsonResponse(posts_serialized, safe=False)
+
+def temp_hum_pm(request):
+    if not request.user.is_authenticated:
+        return render(request, 'hue/login.html', {})
+    else:
+        temp = TempHumPm.objects.all().order_by('-callDate')
+        return render(request, 'hue/temphumpm.html', {'temp': temp})
+
+def period_call_temphumpm_resp(request):
+    pos = TempHumPm.objects.all().order_by('-callDate')
     posts_serialized = serializers.serialize('json', pos)
     return JsonResponse(posts_serialized, safe=False)
 
@@ -125,6 +137,17 @@ def emergency_data(request):
     recieved_json_data = json.loads(emergency_resp)
     savedata = EmergencyPos(deviceUuid=recieved_json_data['deviceUuid'], deviceLng=recieved_json_data['deviceLng'],
                             deviceLat=recieved_json_data['deviceLat'], deviceState=recieved_json_data['deviceState'])
+    savedata.save()
+    return HttpResponse(json.dumps({'result': 'ok'}), content_type="application/json")
+
+@csrf_exempt
+def temphumpm_data(request):
+    print(request.__dict__)
+    temphumpm_resp: object = get_object_or_404(request.POST, id=request.POST.get('data'))
+    print(temphumpm_resp)
+    recieved_json_data = json.loads(temphumpm_resp)
+    savedata = TempHumPm(deviceUuid=recieved_json_data['deviceUuid'], deviceLng=recieved_json_data['deviceLng'],
+                            deviceLat=recieved_json_data['deviceLat'], deviceTempature=recieved_json_data['deviceTp'], deviceHum=recieved_json_data['deviceHm'], devicePm=recieved_json_data['devicePm'])
     savedata.save()
     return HttpResponse(json.dumps({'result': 'ok'}), content_type="application/json")
 

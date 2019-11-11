@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import State, Room, RoomPath, Device, User, RoomReservation, SignMappingData, Nodes, Edges, EmergencyPos
+from .models import State, Room, RoomPath, Device, User, RoomReservation, SignMappingData, Nodes, Edges, EmergencyPos, TempHumPm
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -87,6 +87,10 @@ class HueEmergency(admin.ModelAdmin):
     model = EmergencyPos
     list_display = ['deviceUuid', 'deviceLng', 'deviceLat', 'deviceState', 'callDate']
 
+class HueTempHumPm(admin.ModelAdmin):
+    model = TempHumPm
+    list_display = ['deviceUuid', 'deviceLng', 'deviceLat', 'deviceTempature', 'deviceHum', 'devicePm', 'callDate']
+
 
 admin.site.register(State, StateAdmin)
 admin.site.register(Room, RoomAdmin)
@@ -97,3 +101,4 @@ admin.site.register(SignMappingData, SignMappingDataAdmin)
 admin.site.register(Nodes, HueNodesAdmin)
 admin.site.register(Edges, HueEdgesAdmin)
 admin.site.register(EmergencyPos, HueEmergency)
+admin.site.register(TempHumPm, HueTempHumPm)

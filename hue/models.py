@@ -135,3 +135,12 @@ class EmergencyPos(models.Model):
     deviceLat = models.FloatField(default=None, blank=False, null=False)
     deviceState = models.CharField(max_length=2, blank=False, null=False)
     callDate = models.DateTimeField(auto_now_add=True)
+
+class TempHumPm(models.Model):
+    deviceUuid = models.CharField(max_length=100, blank=False, null=False)
+    deviceLng = models.FloatField(default=None, blank=False, null=False)
+    deviceLat = models.FloatField(default=None, blank=False, null=False)
+    deviceTempature = models.FloatField(default=None, blank=False, null=False)
+    deviceHum = models.FloatField(default=None, blank=False, null=False)
+    devicePm = models.FloatField(default=None, blank=False, null=False)
+    callDate = models.DateTimeField(auto_now_add=True)

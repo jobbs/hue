@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/static/bootstrap/bootstrap.min.css">
+<style>
+    .bg-light {
+      background-color:#fff!important;
+    }
+    .alerts.top-right {
+    top: 35px;
+    right: 20px;
+    }
+
+    .alerts {
+    position: absolute;
+    z-index: 1030;
+    width: 300px;
+    margin-bottom: 10px;
+    }
+    .alert {
+    margin-top: 15px;
+    margin-bottom: 15px;
+    }
+
+    .alerts .alert-red {color: #a94442; background-color: #f2dede; border-color: #ebccd1;}
+</style>
+<script src="/static/jquery/jquery-3.4.1.min.js"></script>
+<script src="/static/jquery/popper.min.js" ></script>
+<script src="/static/bootstrap/bootstrap.min.js"></script>
+<script src="/static/jquery.cookie.js"></script>
+
+
+ <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=qtrx6xyjgf"></script>
+<script>
+tokens = '{{ csrf_token }}';
+
+</script>
+<script src="/static/alrm.js"></script>
+<title>Hue 休 {% block title%}{% endblock %}</title>
+</head>
+<body>
+<div class="alerts top-right" id="alertsDiv"></div>
+<div class="container">
+    <header class="header clearfix" style="background-color:#fff">
+        <nav class="navbar navbar-expand-lg navbar-light primary-color" >
+            <a class="navbar-brand" href="/navi">Hue 休</a>
+            <ul class="nav">
+                {% if user.is_authenticated %}
+                <li class="nav-item"><a href="#" class="nav-link">{{user.first_name}}님 환영합니다.</a></li>
+                <li class="nav-item"><a href="/navi" class="nav-link">이정표시스템</a></li>
+                <li class="nav-item"><a href="/emergency" class="nav-link">응급구조시스템</a></li>
+                <li class="nav-item"><a href="/temphumpm" class="nav-link">환경정보시스템</a></li>
+                <li class="nav-item"><a href="/logout" class="nav-link">로그아웃</a></li>
+                {% else %}
+                <!--<li class="nav-item"><a href="/login" class="nav-link">로그인</a></li>-->
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+    {% block content %}
+    {% endblock %}
+    <footer class="footer">
+        <p>&copy; 2019, junseok@selim.co.kr</p>
+    </footer>
+</div>
+</body>
+</html>
