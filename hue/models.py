@@ -144,3 +144,8 @@ class TempHumPm(models.Model):
     deviceHum = models.FloatField(default=None, blank=False, null=False)
     devicePm = models.FloatField(default=None, blank=False, null=False)
     callDate = models.DateTimeField(auto_now_add=True)
+
+class TpGps(models.Model):
+    deviceUuid = models.CharField(max_length=100, blank=False, null=False)
+    deviceLng = models.FloatField(default=None, blank=False, null=False)
+    deviceLat = models.FloatField(default=None, blank=False, null=False)

@@ -16,13 +16,31 @@ print('Listening on {}:{}'.format(bind_ip, bind_port))
 def handle_client_connection(client_socket):
     conn = sqlite3.connect('C:\work\db.sqlite3')
     c = conn.cursor()
-    request = client_socket.recv(1024)
+    request = client_socket.recv(21)
+    request = request.decode('utf-8')
     print('Received {}'.format(request))
-    request = json.loads(request)
-    c.execute("INSERT INTO hue_temphumpm(deviceUuid,deviceLng,deviceLat,deviceTempature,deviceHum,devicePm,callDate) VALUES ('"+str(request["deviceUuid"])+"',"+str(request["deviceLng"])+","+str(request["deviceLat"])+","+str(request["deviceTp"])+","+str(request["deviceHm"])+","+str(request["devicePm"])+", datetime('now','localtime'))")
+    request = split(request)
+    deviceUuid = request[1]+request[2]+request[3]+request[4]
+    deviceTp = request[5]+request[6]+request[7]+request[8]
+    deviceHm =request[9]+request[10]+request[11]+request[12]
+    devicePm =request[13]+request[14]+request[15]+request[16]
+    deviceTp = int(deviceTp)/10
+    deviceHm = int(deviceHm)/10
+    devicePm = int(devicePm)/10
+    c.execute("SELECT deviceUuid, deviceLng, deviceLat FROM hue_tpgps where deviceUuid='"+deviceUuid+"'")
+    r = c.fetchone()
+    c.close()
+    deviceLng = r[1]
+    deviceLat = r[2]
+    c = conn.cursor()
+    c.execute("INSERT INTO hue_temphumpm(deviceUuid,deviceLng,deviceLat,deviceTempature,deviceHum,devicePm,callDate) VALUES ('"+deviceUuid+"',"+str(deviceLng)+","+str(deviceLat)+","+str(deviceTp)+","+str(deviceHm)+","+str(devicePm)+", datetime('now','localtime'))")
     conn.commit()
+
     conn.close()
     client_socket.close()
+
+def split(word):
+    return list(word)
 
 while True:
     client_sock, address = server.accept()
