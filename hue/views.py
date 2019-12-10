@@ -75,21 +75,21 @@ def signal(request):
     port = 'COM4'  # 시리얼 포트
     baud = 115200  # 시리얼 보드레이트(통신속도)
     data = request.POST.getlist('signalData[]')
-    # print('Transfer Data::%s', data)
-    # ser = serial.Serial(port, baud)
-    # for item in data:
-    #     #if ser.in_waiting == 1:
-    #     text = item+'\n'
-    #     for char in list(text):
-    #     #print(text.encode('ascii'))
-    #     #ser.name()
-    #         ser.write(char.encode('ascii'))
-    #         time.sleep(0.1)
-    #     result = ser.readline()
-    #     print(result)
-    #     time.sleep(0.1)
-    # ser.flush()
-    # ser.close()
+    print('Transfer Data::%s', data)
+    ser = serial.Serial(port, baud)
+    for item in data:
+        #if ser.in_waiting == 1:
+        text = item+'\n'
+        for char in list(text):
+        #print(text.encode('ascii'))
+        #ser.name()
+            ser.write(char.encode('ascii'))
+            time.sleep(0.1)
+        result = ser.readline()
+        print(result)
+        time.sleep(0.1)
+    ser.flush()
+    ser.close()
 
     return HttpResponse(json.dumps({'result': data}), content_type="application/json")
 
