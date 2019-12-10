@@ -37,6 +37,7 @@ def handle_client_connection(client_socket):
     conn.commit()
 
     conn.close()
+
     client_socket.close()
 
 def split(word):
